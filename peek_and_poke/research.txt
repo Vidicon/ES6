@@ -1,0 +1,4 @@
+In Datasheet-UM10326.pdf zoeken naar RTC zoeken (hoofdstuk 28). Register van RTC_UCOUNT -> 0x4002 4000.
+Segfault op host. Klopt want dit is een ander adres op host.
+Op target werkt het maar in user space niet de juiste waarde omdat alleen via de kernelspace access is toegestaan.
+Verder het adres omzetten met io_p2v().
