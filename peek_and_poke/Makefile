@@ -1,4 +1,4 @@
-obj-m += something.o
+obj-m += freddy.o
 
 CURR=$(shell uname -r)
 TARG=/home/student/felabs/sysdev/tinysystem/linux-2.6.34
