@@ -42,6 +42,7 @@ sysfs_store(struct device *dev,
 	unsigned int value = 0;
 	sscanf(buffer, "%c %x %d", &command, &address, &value);
 
+	// Read value registers starting from address
 	if (command == 'r') {
 		printk(KERN_INFO "r: Address: %x, Length: %d\n", address, value);
 		int i = 0;
@@ -50,11 +51,16 @@ sysfs_store(struct device *dev,
 		}
 	}
 
+	// echo "r 40024000 2" > /sys/kernel/es6/data
+	// Gives the up and down counters
+
+	// Write whatever is value to address (still just an int)
 	if (command == 'w') {
 		printk(KERN_INFO "w: Address: %x, Length: %d\n", address, value);
-		//*(unsigned int*)(io_p2v(address)) = value;
 		memcpy(io_p2v(address),&value,sizeof(unsigned int));
 	}
+
+	// We can write to 0x400A8014 and read it back.
 
 	used_buffer_size = count > sysfs_max_data_size ? sysfs_max_data_size : count; /* handle MIN(used_buffer_size, count) bytes */
 	
