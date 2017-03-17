@@ -38,21 +38,23 @@ sysfs_store(struct device *dev,
 {	
 	char command = 'x';
 	unsigned int address = 0;
-	int length = 0;
-	sscanf(buffer, "%c %x %d", &command, &address, &length);
+	unsigned int value = 0;
+	sscanf(buffer, "%c %x %d", &command, &address, &value);
 
 	if (command == 'r') {
-		printk(KERN_INFO "r: Addr: %x, Len: %d\n", address, length);
-		printk(KERN_INFO "Thing: %u", *(unsigned int*)(io_p2v(address)));
+		printk(KERN_INFO "r: Address: %x, Length: %d\n", address, value);
+		printk(KERN_INFO "r: Result: %u\n", *(unsigned int*)(io_p2v(address)));
 	}
 
 	if (command == 'w') {
-		printk(KERN_INFO  "w: Addr: %x, Len: %d\n", address, length);
+		printk(KERN_INFO "w: Address: %x, Length: %d\n", address, value);
+		//*(unsigned int*)(io_p2v(address)) = value;
+		memcpy(io_p2v(address),&value,sizeof(unsigned int));
 	}
 
 	used_buffer_size = count > sysfs_max_data_size ? sysfs_max_data_size : count; /* handle MIN(used_buffer_size, count) bytes */
 	
-	printk(KERN_INFO "sysfile_write (/sys/kernel/%s/%s) called, buffer: %s, count: %d\n", sysfs_dir, sysfs_file, buffer, count);
+	//printk(KERN_INFO "sysfile_write (/sys/kernel/%s/%s) called, buffer: %s, count: %d\n", sysfs_dir, sysfs_file, buffer, count);
 
 	memcpy(sysfs_buffer, buffer, used_buffer_size);
 	sysfs_buffer[used_buffer_size] = '\0'; /* this is correct, the buffer is declared to be sysfs_max_data_size+1 bytes! */
@@ -66,7 +68,6 @@ sysfs_store(struct device *dev,
  * was NULL, now we add a store function as well. We must also add writing rights to the file:
  */
 static DEVICE_ATTR(data, S_IWUGO | S_IRUGO, sysfs_show, sysfs_store);
-
 
 /*
  * This is identical to previous example.
