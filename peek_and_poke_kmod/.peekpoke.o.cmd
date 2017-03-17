@@ -1,42 +1,19 @@
-cmd_/home/student/git/ES6/peek_and_poke/freddy.mod.o := gcc -Wp,-MD,/home/student/git/ES6/peek_and_poke/.freddy.mod.o.d  -nostdinc -isystem /usr/lib/gcc/i686-linux-gnu/4.8/include  -I/usr/src/linux-headers-3.13.0-45-generic/arch/x86/include -Iarch/x86/include/generated  -Iinclude -I/usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi -Iarch/x86/include/generated/uapi -I/usr/src/linux-headers-3.13.0-45-generic/include/uapi -Iinclude/generated/uapi -include /usr/src/linux-headers-3.13.0-45-generic/include/linux/kconfig.h -Iubuntu/include  -D__KERNEL__ -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -fno-delete-null-pointer-checks -O2 -m32 -msoft-float -mregparm=3 -freg-struct-return -mno-mmx -mno-sse -fno-pic -mpreferred-stack-boundary=2 -march=i686 -mtune=generic -maccumulate-outgoing-args -Wa,-mtune=generic32 -ffreestanding -fstack-protector -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_AVX=1 -DCONFIG_AS_AVX2=1 -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -Wframe-larger-than=1024 -Wno-unused-but-set-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-var-tracking-assignments -pg -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -Werror=implicit-int -Werror=strict-prototypes -DCC_HAVE_ASM_GOTO  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(freddy.mod)"  -D"KBUILD_MODNAME=KBUILD_STR(freddy)" -DMODULE  -c -o /home/student/git/ES6/peek_and_poke/freddy.mod.o /home/student/git/ES6/peek_and_poke/freddy.mod.c
+cmd_/home/student/git/ES6/peek_and_poke_kmod/peekpoke.o := gcc -Wp,-MD,/home/student/git/ES6/peek_and_poke_kmod/.peekpoke.o.d  -nostdinc -isystem /usr/lib/gcc/i686-linux-gnu/4.8/include  -I/usr/src/linux-headers-3.13.0-45-generic/arch/x86/include -Iarch/x86/include/generated  -Iinclude -I/usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi -Iarch/x86/include/generated/uapi -I/usr/src/linux-headers-3.13.0-45-generic/include/uapi -Iinclude/generated/uapi -include /usr/src/linux-headers-3.13.0-45-generic/include/linux/kconfig.h -Iubuntu/include  -D__KERNEL__ -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -fno-delete-null-pointer-checks -O2 -m32 -msoft-float -mregparm=3 -freg-struct-return -mno-mmx -mno-sse -fno-pic -mpreferred-stack-boundary=2 -march=i686 -mtune=generic -maccumulate-outgoing-args -Wa,-mtune=generic32 -ffreestanding -fstack-protector -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_AVX=1 -DCONFIG_AS_AVX2=1 -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -Wframe-larger-than=1024 -Wno-unused-but-set-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-var-tracking-assignments -pg -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -Werror=implicit-int -Werror=strict-prototypes -DCC_HAVE_ASM_GOTO  -DMODULE  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(peekpoke)"  -D"KBUILD_MODNAME=KBUILD_STR(peekpoke)" -c -o /home/student/git/ES6/peek_and_poke_kmod/.tmp_peekpoke.o /home/student/git/ES6/peek_and_poke_kmod/peekpoke.c
 
-source_/home/student/git/ES6/peek_and_poke/freddy.mod.o := /home/student/git/ES6/peek_and_poke/freddy.mod.c
+source_/home/student/git/ES6/peek_and_poke_kmod/peekpoke.o := /home/student/git/ES6/peek_and_poke_kmod/peekpoke.c
 
-deps_/home/student/git/ES6/peek_and_poke/freddy.mod.o := \
-    $(wildcard include/config/module/unload.h) \
-  include/linux/module.h \
-    $(wildcard include/config/sysfs.h) \
-    $(wildcard include/config/modules.h) \
-    $(wildcard include/config/unused/symbols.h) \
-    $(wildcard include/config/module/sig.h) \
-    $(wildcard include/config/generic/bug.h) \
-    $(wildcard include/config/kallsyms.h) \
-    $(wildcard include/config/smp.h) \
-    $(wildcard include/config/tracepoints.h) \
-    $(wildcard include/config/tracing.h) \
-    $(wildcard include/config/event/tracing.h) \
-    $(wildcard include/config/ftrace/mcount/record.h) \
-    $(wildcard include/config/constructors.h) \
-    $(wildcard include/config/debug/set/module/ronx.h) \
-  include/linux/list.h \
-    $(wildcard include/config/debug/list.h) \
-  include/linux/types.h \
-    $(wildcard include/config/uid16.h) \
+deps_/home/student/git/ES6/peek_and_poke_kmod/peekpoke.o := \
+  include/linux/kernel.h \
     $(wildcard include/config/lbdaf.h) \
-    $(wildcard include/config/arch/dma/addr/t/64bit.h) \
-    $(wildcard include/config/phys/addr/t/64bit.h) \
-    $(wildcard include/config/64bit.h) \
-  include/uapi/linux/types.h \
-  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi/asm/types.h \
-  /usr/src/linux-headers-3.13.0-45-generic/include/uapi/asm-generic/types.h \
-  include/asm-generic/int-ll64.h \
-  include/uapi/asm-generic/int-ll64.h \
-  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi/asm/bitsperlong.h \
-  include/asm-generic/bitsperlong.h \
-  include/uapi/asm-generic/bitsperlong.h \
-  /usr/src/linux-headers-3.13.0-45-generic/include/uapi/linux/posix_types.h \
-  include/linux/stddef.h \
-  include/uapi/linux/stddef.h \
+    $(wildcard include/config/preempt/voluntary.h) \
+    $(wildcard include/config/debug/atomic/sleep.h) \
+    $(wildcard include/config/mmu.h) \
+    $(wildcard include/config/prove/locking.h) \
+    $(wildcard include/config/ring/buffer.h) \
+    $(wildcard include/config/tracing.h) \
+    $(wildcard include/config/ftrace/mcount/record.h) \
+  /usr/lib/gcc/i686-linux-gnu/4.8/include/stdarg.h \
+  include/linux/linkage.h \
   include/linux/compiler.h \
     $(wildcard include/config/sparse/rcu/pointer.h) \
     $(wildcard include/config/trace/branch/profiling.h) \
@@ -49,39 +26,40 @@ deps_/home/student/git/ES6/peek_and_poke/freddy.mod.o := \
     $(wildcard include/config/optimize/inlining.h) \
   include/linux/compiler-gcc4.h \
     $(wildcard include/config/arch/use/builtin/bswap.h) \
-  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/posix_types.h \
-    $(wildcard include/config/x86/32.h) \
-  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi/asm/posix_types_32.h \
-  /usr/src/linux-headers-3.13.0-45-generic/include/uapi/asm-generic/posix_types.h \
-  include/linux/poison.h \
-    $(wildcard include/config/illegal/pointer/value.h) \
-  /usr/src/linux-headers-3.13.0-45-generic/include/uapi/linux/const.h \
-  include/linux/stat.h \
-  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi/asm/stat.h \
-  include/uapi/linux/stat.h \
-  include/linux/time.h \
-    $(wildcard include/config/arch/uses/gettimeoffset.h) \
-  include/linux/cache.h \
-    $(wildcard include/config/arch/has/cache/line/size.h) \
-  include/linux/kernel.h \
-    $(wildcard include/config/preempt/voluntary.h) \
-    $(wildcard include/config/debug/atomic/sleep.h) \
-    $(wildcard include/config/mmu.h) \
-    $(wildcard include/config/prove/locking.h) \
-    $(wildcard include/config/ring/buffer.h) \
-  /usr/lib/gcc/i686-linux-gnu/4.8/include/stdarg.h \
-  include/linux/linkage.h \
   include/linux/stringify.h \
   include/linux/export.h \
     $(wildcard include/config/have/underscore/symbol/prefix.h) \
+    $(wildcard include/config/modules.h) \
     $(wildcard include/config/modversions.h) \
+    $(wildcard include/config/unused/symbols.h) \
   /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/linkage.h \
+    $(wildcard include/config/x86/32.h) \
     $(wildcard include/config/x86/64.h) \
     $(wildcard include/config/x86/alignment/16.h) \
+  include/linux/stddef.h \
+  include/uapi/linux/stddef.h \
+  include/linux/types.h \
+    $(wildcard include/config/uid16.h) \
+    $(wildcard include/config/arch/dma/addr/t/64bit.h) \
+    $(wildcard include/config/phys/addr/t/64bit.h) \
+    $(wildcard include/config/64bit.h) \
+  include/uapi/linux/types.h \
+  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi/asm/types.h \
+  /usr/src/linux-headers-3.13.0-45-generic/include/uapi/asm-generic/types.h \
+  include/asm-generic/int-ll64.h \
+  include/uapi/asm-generic/int-ll64.h \
+  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi/asm/bitsperlong.h \
+  include/asm-generic/bitsperlong.h \
+  include/uapi/asm-generic/bitsperlong.h \
+  /usr/src/linux-headers-3.13.0-45-generic/include/uapi/linux/posix_types.h \
+  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/posix_types.h \
+  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi/asm/posix_types_32.h \
+  /usr/src/linux-headers-3.13.0-45-generic/include/uapi/asm-generic/posix_types.h \
   include/linux/bitops.h \
   /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/bitops.h \
     $(wildcard include/config/x86/cmov.h) \
   /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/alternative.h \
+    $(wildcard include/config/smp.h) \
     $(wildcard include/config/paravirt.h) \
   /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/asm.h \
   /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/ptrace.h \
@@ -89,6 +67,7 @@ deps_/home/student/git/ES6/peek_and_poke/freddy.mod.o := \
   /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/segment.h \
     $(wildcard include/config/cc/stackprotector.h) \
     $(wildcard include/config/x86/32/lazy/gs.h) \
+  /usr/src/linux-headers-3.13.0-45-generic/include/uapi/linux/const.h \
   /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/page_types.h \
     $(wildcard include/config/physical/start.h) \
     $(wildcard include/config/physical/align.h) \
@@ -163,6 +142,27 @@ deps_/home/student/git/ES6/peek_and_poke/freddy.mod.o := \
   include/uapi/linux/kernel.h \
   /usr/src/linux-headers-3.13.0-45-generic/include/uapi/linux/sysinfo.h \
   /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/div64.h \
+  include/linux/module.h \
+    $(wildcard include/config/sysfs.h) \
+    $(wildcard include/config/module/sig.h) \
+    $(wildcard include/config/generic/bug.h) \
+    $(wildcard include/config/kallsyms.h) \
+    $(wildcard include/config/tracepoints.h) \
+    $(wildcard include/config/event/tracing.h) \
+    $(wildcard include/config/module/unload.h) \
+    $(wildcard include/config/constructors.h) \
+    $(wildcard include/config/debug/set/module/ronx.h) \
+  include/linux/list.h \
+    $(wildcard include/config/debug/list.h) \
+  include/linux/poison.h \
+    $(wildcard include/config/illegal/pointer/value.h) \
+  include/linux/stat.h \
+  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/uapi/asm/stat.h \
+  include/uapi/linux/stat.h \
+  include/linux/time.h \
+    $(wildcard include/config/arch/uses/gettimeoffset.h) \
+  include/linux/cache.h \
+    $(wildcard include/config/arch/has/cache/line/size.h) \
   /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/cache.h \
     $(wildcard include/config/x86/l1/cache/shift.h) \
     $(wildcard include/config/x86/internode/cache/shift.h) \
@@ -547,9 +547,24 @@ deps_/home/student/git/ES6/peek_and_poke/freddy.mod.o := \
     $(wildcard include/config/have/mod/arch/specific.h) \
     $(wildcard include/config/modules/use/elf/rel.h) \
     $(wildcard include/config/modules/use/elf/rela.h) \
-  include/linux/vermagic.h \
-  include/generated/utsrelease.h \
+  include/linux/device.h \
+    $(wildcard include/config/debug/devres.h) \
+    $(wildcard include/config/pinctrl.h) \
+    $(wildcard include/config/dma/cma.h) \
+    $(wildcard include/config/devtmpfs.h) \
+    $(wildcard include/config/sysfs/deprecated.h) \
+  include/linux/klist.h \
+  include/linux/pinctrl/devinfo.h \
+  include/linux/pinctrl/consumer.h \
+  include/linux/seq_file.h \
+  include/linux/pinctrl/pinctrl-state.h \
+  include/linux/ratelimit.h \
+  /usr/src/linux-headers-3.13.0-45-generic/arch/x86/include/asm/device.h \
+    $(wildcard include/config/x86/dev/dma/ops.h) \
+    $(wildcard include/config/intel/iommu.h) \
+    $(wildcard include/config/amd/iommu.h) \
+  include/linux/pm_wakeup.h \
 
-/home/student/git/ES6/peek_and_poke/freddy.mod.o: $(deps_/home/student/git/ES6/peek_and_poke/freddy.mod.o)
+/home/student/git/ES6/peek_and_poke_kmod/peekpoke.o: $(deps_/home/student/git/ES6/peek_and_poke_kmod/peekpoke.o)
 
-$(deps_/home/student/git/ES6/peek_and_poke/freddy.mod.o):
+$(deps_/home/student/git/ES6/peek_and_poke_kmod/peekpoke.o):

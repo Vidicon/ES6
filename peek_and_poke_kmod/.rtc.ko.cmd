@@ -1,1 +1,0 @@
-cmd_/home/student/git/ES6/peek_and_poke_kmod/rtc.ko := arm-linux-ld -EL -r  -T /home/student/felabs/sysdev/tinysystem/linux-2.6.34/scripts/module-common.lds --build-id -o /home/student/git/ES6/peek_and_poke_kmod/rtc.ko /home/student/git/ES6/peek_and_poke_kmod/rtc.o /home/student/git/ES6/peek_and_poke_kmod/rtc.mod.o

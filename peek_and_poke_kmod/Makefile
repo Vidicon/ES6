@@ -1,4 +1,4 @@
-obj-m += rtc.o
+obj-m += peekpoke.o
 
 CURR=$(shell uname -r)
 TARG=/home/student/felabs/sysdev/tinysystem/linux-2.6.34
