@@ -6,6 +6,7 @@
 #include <linux/module.h>	/* Specifically, a module */
 #include <linux/kobject.h>   /* Necessary because we use sysfs */
 #include <linux/device.h>
+#include <mach/hardware.h>
 
 #define sysfs_dir  "es6"
 #define sysfs_file "hw"
@@ -42,6 +43,7 @@ sysfs_store(struct device *dev,
 
 	if (command == 'r') {
 		printk(KERN_INFO "r: Addr: %x, Len: %d\n", address, length);
+		printk(KERN_INFO "Thing: %u", *(unsigned int*)(io_p2v(address)));
 	}
 
 	if (command == 'w') {
