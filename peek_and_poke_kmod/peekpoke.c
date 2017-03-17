@@ -36,16 +36,16 @@ sysfs_store(struct device *dev,
 			size_t count)
 {	
 	char command = 'x';
-	unsigned int* address = 0;
+	unsigned int address = 0;
 	int length = 0;
-	sscanf(buffer, "%c %x %d", &command, address, &length);
+	sscanf(buffer, "%c %x %d", &command, &address, &length);
 
 	if (command == 'r') {
-		printk(KERN_INFO "r: Addr: %p, Len: %d\n", address, length);
+		printk(KERN_INFO "r: Addr: %x, Len: %d\n", address, length);
 	}
 
 	if (command == 'w') {
-		printk(KERN_INFO  "w: Addr: %p, Len: %d\n", address, length);
+		printk(KERN_INFO  "w: Addr: %x, Len: %d\n", address, length);
 	}
 
 	used_buffer_size = count > sysfs_max_data_size ? sysfs_max_data_size : count; /* handle MIN(used_buffer_size, count) bytes */
