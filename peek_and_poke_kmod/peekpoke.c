@@ -14,6 +14,7 @@
 #define sysfs_max_data_size 1024 /* due to limitations of sysfs, you mustn't go above PAGE_SIZE, 1k is already a *lot* of information for sysfs! */
 static char sysfs_buffer[sysfs_max_data_size+1] = ""; /* an extra byte for the '\0' terminator */
 static ssize_t used_buffer_size = 0;
+static size_t regSz = 4; // because documentation
 
 char result_buffer[sysfs_max_data_size+1] = "";
 
@@ -43,7 +44,10 @@ sysfs_store(struct device *dev,
 
 	if (command == 'r') {
 		printk(KERN_INFO "r: Address: %x, Length: %d\n", address, value);
-		printk(KERN_INFO "r: Result: %u\n", *(unsigned int*)(io_p2v(address)));
+		int i = 0;
+		for (i = 0; i < value; i++) {
+			printk(KERN_INFO "r: Offset: %d Result: %u\n", i, *(unsigned int*)(io_p2v(address + i * regSz)));
+		}
 	}
 
 	if (command == 'w') {
