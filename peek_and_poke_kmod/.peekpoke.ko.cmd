@@ -1,1 +1,0 @@
-cmd_/home/student/git/ES6/peek_and_poke_kmod/peekpoke.ko := arm-linux-ld -EL -r  -T /home/student/felabs/sysdev/tinysystem/linux-2.6.34/scripts/module-common.lds --build-id -o /home/student/git/ES6/peek_and_poke_kmod/peekpoke.ko /home/student/git/ES6/peek_and_poke_kmod/peekpoke.o /home/student/git/ES6/peek_and_poke_kmod/peekpoke.mod.o
