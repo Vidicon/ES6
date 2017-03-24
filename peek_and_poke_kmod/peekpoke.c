@@ -9,7 +9,8 @@
 #include <mach/hardware.h>
 
 #define sysfs_dir  "es6"
-#define sysfs_file "hw"
+#define sysfs_file "fietsbel"
+#define SYSFS_FILE_MACRO fietsbel
 
 #define sysfs_max_data_size 1024 /* due to limitations of sysfs, you mustn't go above PAGE_SIZE, 1k is already a *lot* of information for sysfs! */
 static char sysfs_buffer[sysfs_max_data_size+1] = ""; /* an extra byte for the '\0' terminator */
@@ -77,13 +78,13 @@ sysfs_store(struct device *dev,
  * This line is now changed: in the previous example, the last parameter to DEVICE_ATTR
  * was NULL, now we add a store function as well. We must also add writing rights to the file:
  */
-static DEVICE_ATTR(data, S_IWUGO | S_IRUGO, sysfs_show, sysfs_store);
+static DEVICE_ATTR(SYSFS_FILE_MACRO, S_IWUGO | S_IRUGO, sysfs_show, sysfs_store);
 
 /*
  * This is identical to previous example.
  */
 static struct attribute *attrs[] = {
-	&dev_attr_data.attr,
+	&dev_attr_SYSFS_FILE_MACRO.attr,
 	NULL   /* need to NULL terminate the list of attributes */
 };
 static struct attribute_group attr_group = {
