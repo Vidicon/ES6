@@ -1,7 +1,3 @@
-/*
- * sysfs2.c - create a "subdir" with a "file" in /sys
- *
- */
 #include <linux/kernel.h>	/* We're doing kernel work */
 #include <linux/module.h>	/* Specifically, a module */
 #include <linux/kobject.h>   /* Necessary because we use sysfs */
@@ -12,25 +8,17 @@
 #define sysfs_file "pwm"
 #define SYSFS_FILE_MACRO pwm
 
+#define PWM1		0x4005C000
+#define PWM2		0x4005C004
+
+#define PWMEnable 	0x80000000
+#define PWMFreqMax	0x0000FF00
+#define PWMDuty		0x000000FF
+
 #define sysfs_max_data_size 1024 /* due to limitations of sysfs, you mustn't go above PAGE_SIZE, 1k is already a *lot* of information for sysfs! */
 static char sysfs_buffer[sysfs_max_data_size+1] = ""; /* an extra byte for the '\0' terminator */
 static ssize_t used_buffer_size = 0;
-static size_t regSz = 4; // because documentation
-
-char result_buffer[sysfs_max_data_size+1] = "";
-
-static ssize_t
-sysfs_show(struct device *dev,
-		   struct device_attribute *attr,
-		   char *buffer)
-{
-	printk(KERN_INFO "sysfile_read (/sys/kernel/%s/%s) called\n", sysfs_dir, sysfs_file);
-	
-	/*
-	 * The only change here is that we now return sysfs_buffer, rather than a fixed HelloWorld string.
-	 */
-	return sprintf(buffer, "%s", sysfs_buffer);
-}
+static size_t regSz = 4;
 
 static ssize_t
 sysfs_store(struct device *dev,
@@ -39,34 +27,24 @@ sysfs_store(struct device *dev,
 			size_t count)
 {	
 	char command = 'x';
-	unsigned int address = 0;
-	unsigned int value = 0;
-	sscanf(buffer, "%c %x %d", &command, &address, &value);
+	int pwmNumber = -1;
+	int dutyCycle = -1;
+	int frequency = -1;
+	sscanf(buffer, "%c %d %d %d", &command, &pwmNumber, &frequency);
 
-	// Read value registers starting from address
 	if (command == 'r') {
-		printk(KERN_INFO "r: Address: %x, Length: %d\n", address, value);
-		int i = 0;
-		for (i = 0; i < value; i++) {
-			printk(KERN_INFO "r: Offset: %d Result: %u\n", i, *(unsigned int*)(io_p2v(address + i * regSz)));
-		}
+		//int pwm1Info = *io_p2v(PWM1);
+
+		printk(KERN_INFO "hier, dingen, %x", *(unsigned int*)(io_p2v(PWM1)));
 	}
 
-	// echo "r 40024000 2" > /sys/kernel/es6/data
-	// Gives the up and down counters
-
-	// Write whatever is value to address (still just an int)
 	if (command == 'w') {
-		printk(KERN_INFO "w: Address: %x, Length: %d\n", address, value);
-		memcpy(io_p2v(address),&value,sizeof(unsigned int));
+		printk(KERN_INFO "Kannie");
+		
 	}
-
-	// We can write to 0x400A8014 and read it back.
 
 	used_buffer_size = count > sysfs_max_data_size ? sysfs_max_data_size : count; /* handle MIN(used_buffer_size, count) bytes */
 	
-	//printk(KERN_INFO "sysfile_write (/sys/kernel/%s/%s) called, buffer: %s, count: %d\n", sysfs_dir, sysfs_file, buffer, count);
-
 	memcpy(sysfs_buffer, buffer, used_buffer_size);
 	sysfs_buffer[used_buffer_size] = '\0'; /* this is correct, the buffer is declared to be sysfs_max_data_size+1 bytes! */
 
@@ -78,7 +56,7 @@ sysfs_store(struct device *dev,
  * This line is now changed: in the previous example, the last parameter to DEVICE_ATTR
  * was NULL, now we add a store function as well. We must also add writing rights to the file:
  */
-static DEVICE_ATTR(SYSFS_FILE_MACRO, S_IWUGO | S_IRUGO, sysfs_show, sysfs_store);
+static DEVICE_ATTR(SYSFS_FILE_MACRO, S_IWUGO | S_IRUGO, NULL, sysfs_store);
 
 /*
  * This is identical to previous example.
