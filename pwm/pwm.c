@@ -10,7 +10,8 @@
 
 #define PWM1		0x4005C000
 #define PWM2		0x4005C004
-
+#define PWMCLOCK	0x400040B8	//= 0x115
+#define LCDCONFIG	0x40004054	//= 0
 #define PWMEnable 	0x80000000
 #define PWMFreqMax	0x0000FF00
 #define PWMBitsToShiftForFreq 8 // lekker korte naam toch ;p
@@ -45,8 +46,9 @@ sysfs_store(struct device *dev,
 	} else if (command == 'w') {
 		if(pwmNumber == 1) {
 			if(frequency >= 0 && frequency < 256 && dutyCycle >= 0 && dutyCycle < 256) {
-				*(unsigned int*)(io_p2v(PWM1)) = 0;
-				*(unsigned int*)(io_p2v(PWM1)) |= PWMEnable;
+
+
+				*(unsigned int*)(io_p2v(PWM1)) = PWMEnable;
 				*(unsigned int*)(io_p2v(PWM1)) |= frequency << PWMBitsToShiftForFreq;
 				*(unsigned int*)(io_p2v(PWM1)) |= dutyCycle;
 				printk(KERN_INFO "pwm1 geschreven\n");
@@ -57,8 +59,7 @@ sysfs_store(struct device *dev,
 		}
 		else if(pwmNumber == 2) {
 			if(frequency >= 0 && frequency < 256 && dutyCycle >= 0 && dutyCycle < 256) {
-				*(unsigned int*)(io_p2v(PWM2)) = 0;
-				*(unsigned int*)(io_p2v(PWM2)) |= PWMEnable;
+				*(unsigned int*)(io_p2v(PWM2)) = PWMEnable;
 				*(unsigned int*)(io_p2v(PWM2)) |= frequency << PWMBitsToShiftForFreq;
 				*(unsigned int*)(io_p2v(PWM2)) |= dutyCycle;
 				printk(KERN_INFO "pwm2 geschreven\n");
@@ -121,6 +122,12 @@ int __init sysfs_init(void)
 	}
 
 	printk(KERN_INFO "/sys/kernel/%s/%s created\n", sysfs_dir, sysfs_file);
+
+
+	*(unsigned int*)(io_p2v(PWMCLOCK)) = 0x115;
+	*(unsigned int*)(io_p2v(LCDCONFIG)) = 0;
+
+
 	return result;
 }
 
