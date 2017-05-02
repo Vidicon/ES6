@@ -13,12 +13,12 @@
 
 #define PWMEnable 	0x80000000
 #define PWMFreqMax	0x0000FF00
+#define PWMBitsToShiftForFreq 8 // lekker korte naam toch ;p
 #define PWMDuty		0x000000FF
 
 #define sysfs_max_data_size 1024 /* due to limitations of sysfs, you mustn't go above PAGE_SIZE, 1k is already a *lot* of information for sysfs! */
 static char sysfs_buffer[sysfs_max_data_size+1] = ""; /* an extra byte for the '\0' terminator */
 static ssize_t used_buffer_size = 0;
-static size_t regSz = 4;
 
 static ssize_t
 sysfs_store(struct device *dev,
@@ -30,17 +30,46 @@ sysfs_store(struct device *dev,
 	int pwmNumber = -1;
 	int dutyCycle = -1;
 	int frequency = -1;
-	sscanf(buffer, "%c %d %d %d", &command, &pwmNumber, &frequency);
+	sscanf(buffer, "%c %d %d %d", &command, &pwmNumber, &frequency, &dutyCycle);
 
 	if (command == 'r') {
-		//int pwm1Info = *io_p2v(PWM1);
-
-		printk(KERN_INFO "hier, dingen, %x", *(unsigned int*)(io_p2v(PWM1)));
-	}
-
-	if (command == 'w') {
-		printk(KERN_INFO "Kannie");
-		
+		if(pwmNumber == 1) {
+			printk(KERN_INFO "pwm1: %x\n", *(unsigned int*)(io_p2v(PWM1)));
+		}
+		else if(pwmNumber == 2) {
+			printk(KERN_INFO "pwm2: %x\n", *(unsigned int*)(io_p2v(PWM2)));
+		}
+		else {
+			printk(KERN_INFO "doe eens niet...\n");
+		}
+	} else if (command == 'w') {
+		if(pwmNumber == 1) {
+			if(frequency >= 0 && frequency < 256 && dutyCycle >= 0 && dutyCycle < 256) {
+				*(unsigned int*)(io_p2v(PWM1)) = 0;
+				*(unsigned int*)(io_p2v(PWM1)) |= PWMEnable;
+				*(unsigned int*)(io_p2v(PWM1)) |= frequency << PWMBitsToShiftForFreq;
+				*(unsigned int*)(io_p2v(PWM1)) |= dutyCycle;
+				printk(KERN_INFO "pwm1 geschreven\n");
+			} else {
+				printk(KERN_INFO "nope...\n");
+			}
+			
+		}
+		else if(pwmNumber == 2) {
+			if(frequency >= 0 && frequency < 256 && dutyCycle >= 0 && dutyCycle < 256) {
+				*(unsigned int*)(io_p2v(PWM2)) = 0;
+				*(unsigned int*)(io_p2v(PWM2)) |= PWMEnable;
+				*(unsigned int*)(io_p2v(PWM2)) |= frequency << PWMBitsToShiftForFreq;
+				*(unsigned int*)(io_p2v(PWM2)) |= dutyCycle;
+				printk(KERN_INFO "pwm2 geschreven\n");
+			} else {
+				printk(KERN_INFO "nope...\n");
+			}
+		} else {
+			printk(KERN_INFO "doe eens niet...\n");
+		}
+	} else {
+		printk(KERN_INFO "doe eens niet...\n");
 	}
 
 	used_buffer_size = count > sysfs_max_data_size ? sysfs_max_data_size : count; /* handle MIN(used_buffer_size, count) bytes */
@@ -75,9 +104,6 @@ int __init sysfs_init(void)
 {
 	int result = 0;
 
-	/*
-	 * This is identical to previous example.
-	 */
 	hello_obj = kobject_create_and_add(sysfs_dir, kernel_kobj);
 	if (hello_obj == NULL)
 	{
