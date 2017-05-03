@@ -1,4 +1,4 @@
-obj-m += pwm.o
+obj-m += pwm.o chardev.o
 
 CURR=$(shell uname -r)
 TARG=/home/student/felabs/sysdev/tinysystem/linux-2.6.34
