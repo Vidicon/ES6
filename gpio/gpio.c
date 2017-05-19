@@ -6,27 +6,15 @@
 #include <mach/hardware.h>
 #include <asm/uaccess.h>
 
-/*
- * Joystick defines / GPIO
- */
-#define Press     1  // J3.47 (9th pin from bottom/left)
-#define Down      16 // J3.49 (8th pin from bottom/left)
-#define Right     8  // J3.57 (4th pin from bottom/left)
-#define Left      2  // J3.56 (5th pin from bottom/right)
-#define Up        4  // J3.48 (9th pin from bottom/right)
+#include "ports.h"
 
 /*
- * These register values to control GPIO are from the LPC32x0 User Manual
+ * P2 GPIO control registers
  */
 // in the init thing
 #define P2_MUX_SET          0x40028028  // WO   Write '1' to bit 3 to set EMC_D[31:19] pins being configured as GPIO pins P2[12:0]
 #define P2_MUX_CLR          0x4002802C  // WO   Write '1' to clear P2 MUX STATE
 #define P2_MUX_STATE        0x40028030  // RO   Is 0 bit
-
-// this will come in /dev/
-#define P2_INP_STATE        0x4002801C  // RO   Reads P2.[bit] state
-#define P2_OUTP_SET         0x40028020  // WO   Writes same
-#define P2_OUTP_CLR         0x40028024  // WO   Write '1' to drive P2.[bit] low
 
 // 0 is input, 1 is output
 // this is /sys/
@@ -34,13 +22,20 @@
 #define P2_DIR_CLR          0x40028014  // WO   Write '1' to set P2.[bit] to Input
 #define P2_DIR_STATE        0x40028018  // RO   Reads P2.[bit] direction
 
+// this will come in /dev/
+#define P2_INP_STATE        0x4002801C  // RO   Reads P2.[bit] input state
+#define P2_OUTP_SET         0x40028020  // WO   Writes P2.[bit] output state
+#define P2_OUTP_CLR         0x40028024  // WO   Write '1' to drive P2.[bit] low
+
 /*
  * sysfs definitions
  */
-#define sysfs_dir           "es6"
+#define sysfs_dir           "es6_gpio"
 #define sysfs_file          "gpio"
 #define SYSFS_FILE_MACRO    gpiofs
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// devfs section
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
@@ -53,23 +48,14 @@
 
 #define sysfs_max_data_size 1024 /* due to limitations of sysfs, you mustn't go above PAGE_SIZE, 1k is already a *lot* of information for sysfs! */
 static char sysfs_buffer[sysfs_max_data_size+1] = ""; /* an extra byte for the '\0' terminator */
-static ssize_t used_buffer_size = 0;
-static size_t regSz = 4; // because documentation
 
 char result_buffer[sysfs_max_data_size+1] = "";
-
-
-/*
- * iets met enums
- */
-enum devType {
-    lezen = 0,
-    schrijven = 1,
-};
 
 static int deviceIsOpen = 0;
 static char Message[BUF_LEN];
 static char *Message_Ptr;
+
+int currentPin;
 
 static int device_open(struct inode *inode, struct file *file) {
     int minor = MINOR(inode->i_rdev);
@@ -94,7 +80,58 @@ static int device_release(struct inode *inode, struct file *file) {
 static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t *offset) {
     int bytes_read = 0;
     int minor = (int)filp->private_data;
-    // hier een schakel kees ofzo
+    
+    switch(minor) {
+        /*case 0: {
+            bool enabled = (PWM1Value & MASK_PWM_ENABLE) != 0;          
+            sprintf(Message_Ptr, "PWM1 enabled: %s", enabled ? "Yes" : "No");
+            break;
+        }
+        case 1: {
+            int reloadValue = (PWM1Value & MASK_PWM_FREQUENCY) >> PWM_SHIFT_FREQ;
+            if(reloadValue == 0) {
+                sprintf(Message_Ptr, "nope..."); // iets met delen door 0
+                break;
+            }
+            sprintf(Message_Ptr, "PWM1 raw: %d, freq: %dHz", reloadValue, map_freq(reloadValue));
+            break;
+        }
+        case 2: {
+            int dutyValue = (PWM1Value & MASK_PWM_DUTY);
+            if(dutyValue == 0) {
+                sprintf(Message_Ptr, "nope..."); // iets met delen door 0
+                break;
+            }
+            sprintf(Message_Ptr, "PWM1 raw: %d, duty: %d%%", dutyValue, map_duty(dutyValue));
+            break;
+        }
+        case 3: {
+            bool enabled = (PWM2Value & MASK_PWM_ENABLE) != 0;
+            sprintf(Message_Ptr, "PWM2 enabled: %s", enabled ? "Yes" : "No");
+            break;
+        }
+        case 4: {
+            int reloadValue = (PWM2Value & MASK_PWM_FREQUENCY) >> PWM_SHIFT_FREQ;
+            if(reloadValue == 0) {
+                sprintf(Message_Ptr, "nope..."); // iets met delen door 0
+                break;
+            }
+            sprintf(Message_Ptr, "PWM2 raw: %d, freq: %dHz", reloadValue, map_freq(reloadValue));
+            break;
+        }
+        case 5: {
+            int dutyValue = (PWM2Value & MASK_PWM_DUTY);
+            if(dutyValue == 0) {
+                sprintf(Message_Ptr, "nope..."); // iets met delen door 0
+                break;
+            }
+            sprintf(Message_Ptr, "PWM2 raw: %d, duty: %d%%", dutyValue, map_duty(dutyValue));
+            break;
+        }*/
+        default:
+            sprintf(Message_Ptr, "nope break...");
+            break;
+    }
 
     // cpy_to_usr somehow
     while (length && *Message_Ptr) {
@@ -128,15 +165,9 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
     return i;
 }
 
-static struct file_operations fops = {
-    .read = device_read,
-    .write = device_write,
-    .open = device_open,
-    .release = device_release
-};
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-
+// sysfs section
+///////////////////////////////////////////////////////////////////////////////////////////////////
 static ssize_t
 sysfs_show(struct device *dev,
            struct device_attribute *attr,
@@ -157,38 +188,46 @@ sysfs_store(struct device *dev,
             size_t count)
 {   
     char command = 'x';
-    unsigned int address = 0;
-    unsigned int value = 0;
-    sscanf(buffer, "%c %x %d", &command, &address, &value);
+    unsigned int jumper = 0;
+    unsigned int pin = 0;
+    int bitToSet = -1;
+    int allBits = 0;
 
-    // Read value registers starting from address
-    if (command == 'r') {
-        int i = 0;
-        printk(KERN_INFO "r: Address: %x, Length: %d\n", address, value);
-        for (i = 0; i < value; i++) {
-            printk(KERN_INFO "r: Offset: %d Result: %u\n", i, *(unsigned int*)(io_p2v(address + i * regSz)));
-        }
+    if (sscanf(buffer, "%c %d %d", &command, &jumper, &pin) != 3) {
+        printk(KERN_ERR "Wrong input. Expected format: [i, o] [jumper number] [pin number]");
+        return -EINVAL;        
     }
 
-    // echo "r 40024000 2" > /sys/kernel/es6/data
-    // Gives the up and down counters
-
-    // Write whatever is value to address (still just an int)
-    if (command == 'w') {
-        printk(KERN_INFO "w: Address: %x, Length: %d\n", address, value);
-        memcpy(io_p2v(address),&value,sizeof(unsigned int));
+    if (jumper < 1 || jumper > 3) {
+        printk(KERN_ERR "Unsupported jumper");
+        return -EINVAL;
     }
 
-    // We can write to 0x400A8014 and read it back.
+    // A valid bit should be >= 1
+    // Error = -1
+    // Consider what to do with 0 (our protocol to set all????)
+    bitToSet = GetJumperPinVal(jumper, pin);
+    allBits = 0 | bitToSet; // find shit
 
-    used_buffer_size = count > sysfs_max_data_size ? sysfs_max_data_size : count; /* handle MIN(used_buffer_size, count) bytes */
-    
-    //printk(KERN_INFO "sysfile_write (/sys/kernel/%s/%s) called, buffer: %s, count: %d\n", sysfs_dir, sysfs_file, buffer, count);
+    if (bitToSet < 0) { 
+        printk(KERN_ERR "J%d.%d is not supported for GPIO", jumper, pin);
+        return -EINVAL;
+    }
 
-    memcpy(sysfs_buffer, buffer, used_buffer_size);
-    sysfs_buffer[used_buffer_size] = '\0'; /* this is correct, the buffer is declared to be sysfs_max_data_size+1 bytes! */
+    if (command == 'i') {
+        printk(KERN_INFO "J%d.%d set to INPUT", jumper, pin);
+        memcpy(io_p2v(P2_DIR_CLR),&allBits,sizeof(unsigned int));
+    }
+    else if (command == 'o') {
+        printk(KERN_INFO "J%d.%d set to OUTPUT", jumper, pin);
+        memcpy(io_p2v(P2_DIR_SET),&allBits,sizeof(unsigned int));
+    }
+    else {
+        printk(KERN_ERR "Invalid command");
+        return -EINVAL;
+    }
 
-    return used_buffer_size;
+    return count;
 }
 
 
@@ -202,8 +241,16 @@ static struct attribute_group attr_group = {
 };
 static struct kobject *gpio_kobj = NULL;
 
-int sysfs_init(void) {
+static struct file_operations fops = {
+    .read = device_read,
+    .write = device_write,
+    .open = device_open,
+    .release = device_release
+};
+
+int __init gpio_init(void) {
     int result = 0;
+    int major = register_chrdev(DEVICE_MAJOR, DEVICE_NAME, &fops);
 
     gpio_kobj = kobject_create_and_add(sysfs_dir, kernel_kobj);
     if (gpio_kobj == NULL) {
@@ -219,46 +266,22 @@ int sysfs_init(void) {
     }
 
     printk(KERN_INFO "/sys/kernel/%s/%s created\n", sysfs_dir, sysfs_file);
-    return result;
-}
-
-void sysfs_exit(void) {
-    kobject_put(gpio_kobj);
-    printk (KERN_INFO "/sys/kernel/%s/%s removed\n", sysfs_dir, sysfs_file);
-}
-
-
-int devfs_init(void) {
-    int major = register_chrdev(DEVICE_MAJOR, DEVICE_NAME, &fops);
 
     if (major < 0) {
         printk ("Registering the character device failed");
         return major;
     }
     printk("Registering the character device succesfull");
-    // init devfs
 
-    return 0;
+    return result;
 }
 
+void __exit gpio_exit(void) {
+    kobject_put(gpio_kobj);
+    printk (KERN_INFO "/sys/kernel/%s/%s removed\n", sysfs_dir, sysfs_file);
 
-void devfs_exit(void) {
-    unregister_chrdev(DEVICE_MAJOR, DEVICE_NAME);
+    unregister_chrdev(DEVICE_MAJOR, DEVICE_NAME);    
 }
-
-void __init gpio_init() {
-    sysfs_init();
-    devfs_init();
-}
-
-void __exit gpio_exit() {
-    sysfs_exit();
-    devfs_exit();
-}
-
-
-
-
 
 module_init(gpio_init);
 module_exit(gpio_exit);
