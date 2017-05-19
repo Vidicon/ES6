@@ -7,27 +7,39 @@
 #include <asm/uaccess.h>
 
 /*
+ * Joystick defines / GPIO
+ */
+#define Press     1  // J3.47 (9th pin from bottom/left)
+#define Down      16 // J3.49 (8th pin from bottom/left)
+#define Right     8  // J3.57 (4th pin from bottom/left)
+#define Left      2  // J3.56 (5th pin from bottom/right)
+#define Up        4  // J3.48 (9th pin from bottom/right)
+
+/*
  * These register values to control GPIO are from the LPC32x0 User Manual
  */
-#define P2_MUX_SET      0x40028028  // WO   Write '1' to bit 3 to set EMC_D[31:19] pins being configured as GPIO pins P2[12:0]
-#define P2_MUX_CLR      0x4002802C  // WO   Write '1' to clear P2 MUX STATE
-#define P2_MUX_STATE    0x40028030  // RO   Is 0 bit
+// in the init thing
+#define P2_MUX_SET          0x40028028  // WO   Write '1' to bit 3 to set EMC_D[31:19] pins being configured as GPIO pins P2[12:0]
+#define P2_MUX_CLR          0x4002802C  // WO   Write '1' to clear P2 MUX STATE
+#define P2_MUX_STATE        0x40028030  // RO   Is 0 bit
 
-#define P2_INP_STATE    0x4002801C  // RO   Reads P2.[bit] state
-#define P2_OUTP_SET     0x40028020  // WO   Writes same
-#define P2_OUTP_CLR     0x40028024  // WO   Write '1' to drive P2.[bit] low
+// this will come in /dev/
+#define P2_INP_STATE        0x4002801C  // RO   Reads P2.[bit] state
+#define P2_OUTP_SET         0x40028020  // WO   Writes same
+#define P2_OUTP_CLR         0x40028024  // WO   Write '1' to drive P2.[bit] low
 
 // 0 is input, 1 is output
-#define P2_DIR_SET      0x40028010  // WO   Write '1' to set P2.[bit] to Output
-#define P2_DIR_CLR      0x40028014  // WO   Write '1' to set P2.[bit] to Input
-#define P2_DIR_STATE    0x40028018  // RO   Reads P2.[bit] direction
+// this is /sys/
+#define P2_DIR_SET          0x40028010  // WO   Write '1' to set P2.[bit] to Output
+#define P2_DIR_CLR          0x40028014  // WO   Write '1' to set P2.[bit] to Input
+#define P2_DIR_STATE        0x40028018  // RO   Reads P2.[bit] direction
 
 /*
  * sysfs definitions
  */
-#define sysfs_dir       "es6"
-#define sysfs_file      "gpio"
-#define SYSFS_FILE_MACRO gpiofs
+#define sysfs_dir           "es6"
+#define sysfs_file          "gpio"
+#define SYSFS_FILE_MACRO    gpiofs
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -15,14 +15,14 @@ poort document source = QVGA_LPC32x0 document
 
 We're reading the following values for the joystick input:
 
-|Joystick  |Register|LPC        |J3
------------|--------|-----------|-----
-|Nothing   |1023    |x          |     
-|Press     |1022    |P2.22      |J3.47 (9e pinnetje van onder/links)
-|Down      |1007    |P2.27      |J3.49 ()
-|Right     |1015    |P2.26      |J3.57 ()
-|Left      |1021    |P2.23      |J3.56 ()
-|Up        |1019    |P2.25      |J3.48 ()
+|Joystick  |Register|Bit     |LPC        |J3   |Pins
+-----------|--------|--------|-----------|-----|-------------------------
+|Nothing   |1023    |x       |x          |     |
+|Press     |1022    |0       |P2.22      |J3.47|(9th pin from bottom/left)
+|Down      |1007    |4       |P2.27      |J3.49|(8th pin from bottom/left)
+|Right     |1015    |3       |P2.26      |J3.57|(4th pin from bottom/left)
+|Left      |1021    |1       |P2.23      |J3.56|(5th pin from bottom/right)
+|Up        |1019    |2       |P2.25      |J3.48|(9th pin from bottom/right)
 
 To set a port, we traced the LPC pins to the J headers (see table above),
 and we connected a LED to check if our peek/poke command worked.
