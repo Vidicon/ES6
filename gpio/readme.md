@@ -28,6 +28,7 @@ We're reading the following values for the joystick input:
 ## Port mappings:
 
 PORT 0  
+
 |Value	|LPC	|SODIMM	|OEM	|J
 --------|-------|-------|-------|-------
 |1		|P0.0	|X1-88	|P1.20	|J3.32
@@ -39,7 +40,8 @@ PORT 0
 |64		|P0.6	|X1-90	|P1.22	|J3.33
 |128	|P0.7	|X1-91	|P1.23	|J1.27
   
-PORT1  
+PORT 1  
+  
 |Value	|LPC	|SODIMM	|OEM	|J
 --------|-------|-------|-------|-------
 |1		|P1.0	|		|		|	
@@ -67,7 +69,8 @@ PORT1
 |4194304|P1.22	|		|		|		
 |8338608|P1.23	|		|		|		
   
-PORT 2  
+PORT 2 
+  
 |Value	|LPC	|SODIMM	|OEM	|J
 --------|-------|-------|-------|-------
 |1		|P2.0	|X1-120 |P2.22	|J3.47
@@ -84,7 +87,8 @@ PORT 2
 |2048	|P2.11	|X1-182 |P3.24	|J1.52
 |4096	|P2.12	|X1-184 |P3.23	|J1.53
   
-PORT3  
+PORT 3  
+
 |Value	|LPC	|SODIMM	|OEM	|J
 --------|-------|-------|-------|-------
 |1		|P3.0	|X1-117	|P2.15	|J3.54
