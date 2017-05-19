@@ -51,6 +51,14 @@
 
 #define BUF_LEN             80
 
+#define sysfs_max_data_size 1024 /* due to limitations of sysfs, you mustn't go above PAGE_SIZE, 1k is already a *lot* of information for sysfs! */
+static char sysfs_buffer[sysfs_max_data_size+1] = ""; /* an extra byte for the '\0' terminator */
+static ssize_t used_buffer_size = 0;
+static size_t regSz = 4; // because documentation
+
+char result_buffer[sysfs_max_data_size+1] = "";
+
+
 /*
  * iets met enums
  */
@@ -86,10 +94,6 @@ static int device_release(struct inode *inode, struct file *file) {
 static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t *offset) {
     int bytes_read = 0;
     int minor = (int)filp->private_data;
-
-    int PWM1Value = *(unsigned int*)(io_p2v(REG_PWM1));
-    int PWM2Value = *(unsigned int*)(io_p2v(REG_PWM2));
-
     // hier een schakel kees ofzo
 
     // cpy_to_usr somehow
@@ -113,12 +117,12 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
 
     Message_Ptr = Message;
     
-    sscanf(Message_Ptr, "%d", &valueToWrite);
+    //sscanf(Message_Ptr, "%d", &valueToWrite);
 
-    if(valueToWrite < 0 && valueToWrite > 255) {
+    /*if(valueToWrite < 0 && valueToWrite > 255) {
         printk(KERN_INFO "nope...");
         return len;
-    }
+    }*/
 
     //schakelcasus
     return i;
@@ -133,11 +137,58 @@ static struct file_operations fops = {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-int (*SetFuncs[])(unsigned int reg, int value) {
-    set_direction,
-    set_output,
-    read_direction,
-    read_input,
+static ssize_t
+sysfs_show(struct device *dev,
+           struct device_attribute *attr,
+           char *buffer)
+{
+    printk(KERN_INFO "sysfile_read (/sys/kernel/%s/%s) called\n", sysfs_dir, sysfs_file);
+    
+    /*
+     * The only change here is that we now return sysfs_buffer, rather than a fixed HelloWorld string.
+     */
+    return sprintf(buffer, "%s", sysfs_buffer);
+}
+
+static ssize_t
+sysfs_store(struct device *dev,
+            struct device_attribute *attr,
+            const char *buffer,
+            size_t count)
+{   
+    char command = 'x';
+    unsigned int address = 0;
+    unsigned int value = 0;
+    sscanf(buffer, "%c %x %d", &command, &address, &value);
+
+    // Read value registers starting from address
+    if (command == 'r') {
+        int i = 0;
+        printk(KERN_INFO "r: Address: %x, Length: %d\n", address, value);
+        for (i = 0; i < value; i++) {
+            printk(KERN_INFO "r: Offset: %d Result: %u\n", i, *(unsigned int*)(io_p2v(address + i * regSz)));
+        }
+    }
+
+    // echo "r 40024000 2" > /sys/kernel/es6/data
+    // Gives the up and down counters
+
+    // Write whatever is value to address (still just an int)
+    if (command == 'w') {
+        printk(KERN_INFO "w: Address: %x, Length: %d\n", address, value);
+        memcpy(io_p2v(address),&value,sizeof(unsigned int));
+    }
+
+    // We can write to 0x400A8014 and read it back.
+
+    used_buffer_size = count > sysfs_max_data_size ? sysfs_max_data_size : count; /* handle MIN(used_buffer_size, count) bytes */
+    
+    //printk(KERN_INFO "sysfile_write (/sys/kernel/%s/%s) called, buffer: %s, count: %d\n", sysfs_dir, sysfs_file, buffer, count);
+
+    memcpy(sysfs_buffer, buffer, used_buffer_size);
+    sysfs_buffer[used_buffer_size] = '\0'; /* this is correct, the buffer is declared to be sysfs_max_data_size+1 bytes! */
+
+    return used_buffer_size;
 }
 
 
@@ -151,7 +202,7 @@ static struct attribute_group attr_group = {
 };
 static struct kobject *gpio_kobj = NULL;
 
-int __init sysfs_init(void) {
+int sysfs_init(void) {
     int result = 0;
 
     gpio_kobj = kobject_create_and_add(sysfs_dir, kernel_kobj);
@@ -171,16 +222,13 @@ int __init sysfs_init(void) {
     return result;
 }
 
-void __exit sysfs_exit(void) {
+void sysfs_exit(void) {
     kobject_put(gpio_kobj);
     printk (KERN_INFO "/sys/kernel/%s/%s removed\n", sysfs_dir, sysfs_file);
 }
 
 
-
-
-
-int init_module(void) {
+int devfs_init(void) {
     int major = register_chrdev(DEVICE_MAJOR, DEVICE_NAME, &fops);
 
     if (major < 0) {
@@ -194,16 +242,26 @@ int init_module(void) {
 }
 
 
-void cleanup_module(void) {
+void devfs_exit(void) {
     unregister_chrdev(DEVICE_MAJOR, DEVICE_NAME);
+}
+
+void __init gpio_init() {
+    sysfs_init();
+    devfs_init();
+}
+
+void __exit gpio_exit() {
+    sysfs_exit();
+    devfs_exit();
 }
 
 
 
 
 
-module_init(sysfs_init);
-module_exit(sysfs_exit);
+module_init(gpio_init);
+module_exit(gpio_exit);
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("LJ&MT");
 MODULE_DESCRIPTION("gpio");
