@@ -28,7 +28,12 @@
 #define sysfs_file      "gpio"
 #define SYSFS_FILE_MACRO gpiofs
 
-
+int (*SetFuncs[])(unsigned int reg, int value) {
+    set_direction,
+    set_output,
+    read_direction,
+    read_input,
+}
 
 
 static DEVICE_ATTR(SYSFS_FILE_MACRO, S_IWUGO | S_IRUGO, sysfs_show, sysfs_store);
@@ -41,20 +46,17 @@ static struct attribute_group attr_group = {
 };
 static struct kobject *gpio_kobj = NULL;
 
-int __init sysfs_init(void)
-{
+int __init sysfs_init(void) {
     int result = 0;
 
     gpio_kobj = kobject_create_and_add(sysfs_dir, kernel_kobj);
-    if (gpio_kobj == NULL)
-    {
+    if (gpio_kobj == NULL) {
         printk (KERN_INFO "%s module failed to load: kobject_create_and_add failed\n", sysfs_file);
         return -ENOMEM;
     }
 
     result = sysfs_create_group(gpio_kobj, &attr_group);
-    if (result != 0)
-    {
+    if (result != 0) {
         printk (KERN_INFO "%s module failed to load: sysfs_create_group failed with result %d\n", sysfs_file, result);
         kobject_put(gpio_kobj);
         return -ENOMEM;
@@ -64,8 +66,7 @@ int __init sysfs_init(void)
     return result;
 }
 
-void __exit sysfs_exit(void)
-{
+void __exit sysfs_exit(void) {
     kobject_put(gpio_kobj);
     printk (KERN_INFO "/sys/kernel/%s/%s removed\n", sysfs_dir, sysfs_file);
 }
