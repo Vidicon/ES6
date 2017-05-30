@@ -65,34 +65,30 @@ static int device_release(struct inode *inode, struct file *file) {
 static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t *offset) {
     int bytes_read = 0;
     int minor = (int)filp->private_data;
-    int jumper, port, direction, inputstate;
     
     if (minor != 0) {
         printk(KERN_ERR "Wrong minor number, expected 0");
         return -EINVAL;
     }
 
+    if (selectedPort.Bit < 1) {
+        printk(KERN_INFO "No port selected");
+    }
+
     if (*Message_Ptr == '\0') {
-        printk(KERN_INFO "End of message.");
         return 0;
     }
 
-    if (selectedPort.Bit < 1) {
-        sprintf(Message_Ptr, "No port selected");
-    }
+    int jumper, port, direction, inputstate;
+    unsigned int rawDirection = *(unsigned int*)(io_p2v(selectedPort.RegDIR + STATE_OFFSET));
+    unsigned int rawInputState = *(unsigned int*)(io_p2v(selectedPort.RegINP));
+    jumper = selectedPort.Jumper;
+    port = selectedPort.PhysicalPin;
+    
+    direction = rawDirection & selectedPort.Bit ? 0 : 1;// >> selectedPort.Bit;
+    inputstate = rawInputState & selectedPort.Bit ? 0 : 1;// >> selectedPort.Bit;
 
-    else {
-        int rawDirection = *(unsigned int*)(io_p2v(selectedPort.RegDIR + STATE_OFFSET));
-        int rawInputState = *(unsigned int*)(io_p2v(selectedPort.RegINP));
-        jumper = selectedPort.Jumper;
-        port = selectedPort.PhysicalPin;
-        
-        direction = rawDirection;// & selectedPort.Bit;
-        inputstate = rawInputState;// & selectedPort.Bit;
-        printk(KERN_INFO "Addr: %x, Val: %d", selectedPort.RegINP, inputstate);
-
-        sprintf(Message_Ptr, "J%d.%d Dir: %d In: %d", jumper, port, direction, inputstate);
-    }
+    sprintf(Message_Ptr, "J%d.%d Direction: %u Input: %u", jumper, port, direction, inputstate);
 
     // cpy_to_usr somehow
     while (length && *Message_Ptr) {
@@ -143,6 +139,7 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
 
     if (command == 'r') {
         printk(KERN_INFO "J%d.%d set for read", jumper, pin);
+        // These pins use different bits, hence this check
         if (jumper == 1 && pin == 24 ||
             jumper == 3 && pin == 54 ||
             jumper == 3 && pin == 46 ||
