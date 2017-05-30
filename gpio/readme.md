@@ -60,7 +60,7 @@ Because the LCD screen uses P0.2 - P0.7 we must disable it. This can be done by 
 |Input		|-							|-							|0x 4002 8040	P0_INP_STATE
   
 __PORT 1__  
-De GPIO functionaliteit van Port 1 is niet beschikbaar omdat deze gebruikt wordt voor het Static RAM, SDR SDRAM of DDR SDRAM. Als we deze MUX setten crasht het systeem (obvious :p).
+The Port 1 GPIO isn't available because these ports are used as address bus of the Static RAM, SDR SDRAM or DDR SDRAM. If we set this MUX the system will crash (obvious :p). Yes we tested it...  
   
 __PORT 2__  
 The EMC data pins can be used as general purpose GPIO when 16 bit SDRAM or DDRAM is used. Writing a one to bit 3 in the P2_MUX_SET register results in all of the corresponding EMC_D[31:19] pins being configured as GPIO pins P2[12:0].
