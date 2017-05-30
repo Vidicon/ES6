@@ -23,10 +23,27 @@ We're reading the following values for the joystick input:
 |Right     |1015    |3       |P2.26      |J3.57|(4th pin from bottom/left)
 |Left      |1021    |1       |P2.23      |J3.56|(5th pin from bottom/right)
 |Up        |1019    |2       |P2.25      |J3.48|(9th pin from bottom/right)
+  
+We found the correct Joystick ports using the following image:  
+![JOYSTICK](https://github.com/MrJaeqx/ES6/gpio/master/joystick.png)  
 
-
+The registers we found in the documentation:  
+![JOYSTICK](https://github.com/MrJaeqx/ES6/gpio/master/joystick.png)  
+  
 ## Port mappings:
+To set a port, we traced the LPC pins to the J headers (see tables below), and we connected a LED to check if our peek/poke command worked. Also we tested the input by connecting 3.3V to the pins.
 
+We traced this using the following documentation:  
+  
+LPC to SODIMM:  
+![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/master/lpc - sodimm.png)  
+  
+SODIMM to OEMBOARD:  
+![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/master/sodimm - oem.png)  
+  
+OEM to J Header:  
+![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/master/header.png)  
+  
 __PORT 0__  
 Because the LCD screen uses P0.2 - P0.7 we must disable it. This can be done by writing 0 to the LCD_CFG (0x40004054) register. No MUX is needed because the default configuration means you can use the pins for GPIO.
   
@@ -104,12 +121,9 @@ The EMC data pins can be used as general purpose GPIO when 16 bit SDRAM or DDRAM
 |Output		|0x 4002 8020	P2_OUTP_SET	|0x 4002 8024	P2_OUTP_CLR	|-
 |Input		|-							|-							|0x 4002 801C	P2_INP_STATE
   
-Example to set Pin J3.47 on  
-8 > 0x4002 8028		P2_MUX_SET  
-1 > 0x4002 8010		P2_DIR_SET  
-1 > 0x4002 8020		P2_OUTP_SET  
-  
 __PORT 3__  
+  
+ No MUX is needed because the default configuration means you can use the pins for GPIO. We can't use GPIO_02 and GPIO_03 because they are used by the ethernet controller.
   
 |Bit	|LPC	|SODIMM	|OEM	|J
 --------|-------|-------|-------|-------
@@ -138,11 +152,7 @@ To read the input state from Port 3 you have to use different bits. See table be
 |14		|GPIO_04|X1-96	|P1.28	|J3.36
 |24		|GPIO_05|X1-85	|P1.13	|J1.24
   
-Example to set Pin J3.54  
-33554432 > 0x4002 8010		P2_DIR_SET  
-33554432 > 0x4002 8004		P3_OUTP_SET  
-  
-To set a port, we traced the LPC pins to the J headers (see table above), and we connected a LED to check if our peek/poke command worked.
+
   
 To set a port:  
 * First write P2_DIR_SET to the desired pin (1023-regVal for dir)  
