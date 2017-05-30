@@ -12,6 +12,11 @@ We're reading the following values for the joystick input:
 Joystick	|Register value	|Bit	|LPC	|J3		|Pins
 ------------|---------------|-------|-------|-------|-------------------------
 Nothing		|1023			|		|		|		|
+Press		|1022			|0		|P2.22	|J3.47	|(9th pin from bottom/left)
+Down		|1007			|4		|P2.27	|J3.49	|(8th pin from bottom/left)
+Right		|1015			|3		|P2.26	|J3.57	|(4th pin from bottom/left)
+Left		|1021			|1		|P2.23	|J3.56	|(5th pin from bottom/right)
+Up			|1019			|2		|P2.25	|J3.48	|(9th pin from bottom/right)
   
 We found the correct Joystick ports using the following image:  
 ![JOYSTICK](img/joystick.PNG)  
