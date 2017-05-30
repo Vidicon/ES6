@@ -6,26 +6,12 @@
 #include <mach/hardware.h>
 #include <asm/uaccess.h>
 
+#include "regs.h"
 #include "ports.h"
 
-/*
- * P2 GPIO control registers
- */
-// 0 is input, 1 is output
-// this is /sys/
-#define P2_DIR_SET          0x40028010  // WO   Write '1' to set P2.[bit] to Output
-#define P2_DIR_CLR          0x40028014  // WO   Write '1' to set P2.[bit] to Input
-#define P2_DIR_STATE        0x40028018  // RO   Reads P2.[bit] direction
-
-// this will come in /dev/
-#define P2_INP_STATE        0x4002801C  // RO   Reads P2.[bit] input state
-#define P2_OUTP_SET         0x40028020  // WO   Writes P2.[bit] output state
-#define P2_OUTP_CLR         0x40028024  // WO   Write '1' to drive P2.[bit] low
-
-// in the init thing
-#define P2_MUX_SET          0x40028028  // WO   Write '1' to bit 3 to set EMC_D[31:19] pins being configured as GPIO pins P2[12:0]
-#define P2_MUX_CLR          0x4002802C  // WO   Write '1' to clear P2 MUX STATE
-#define P2_MUX_STATE        0x40028030  // RO   Is 0 bit
+#define REG_LCDCONFIG       0x40004054  //= 0
+#define VAL_LCDCONFIG       0
+#define VAL_MUX             8
 
 /*
  * sysfs definitions
@@ -37,7 +23,7 @@
 /*
  * devfs definitions
  */
-#define DEVICE_NAME         "gpio"
+#define DEVICE_NAME         "es6_gpio"
 #define DEVICE_MAJOR        137
 
 #define BUF_LEN             80
@@ -50,8 +36,7 @@ char result_buffer[sysfs_max_data_size+1] = "";
 static int deviceIsOpen = 0;
 static char Message[BUF_LEN];
 static char *Message_Ptr;
-
-int currentPin;
+static PortInfo selectedPort;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // devfs section
@@ -67,7 +52,7 @@ static int device_open(struct inode *inode, struct file *file) {
     if (deviceIsOpen) return -EBUSY;
     deviceIsOpen++;
 
-    printk(KERN_INFO "Major: %d, minor: %d", MAJOR(inode->i_rdev), minor);
+    // printk(KERN_INFO "Major: %d, Minor: %d", MAJOR(inode->i_rdev), minor);
 
     return 0;
 }
@@ -80,57 +65,33 @@ static int device_release(struct inode *inode, struct file *file) {
 static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t *offset) {
     int bytes_read = 0;
     int minor = (int)filp->private_data;
+    int jumper, port, direction, inputstate;
     
-    switch(minor) {
-        /*case 0: {
-            bool enabled = (PWM1Value & MASK_PWM_ENABLE) != 0;          
-            sprintf(Message_Ptr, "PWM1 enabled: %s", enabled ? "Yes" : "No");
-            break;
-        }
-        case 1: {
-            int reloadValue = (PWM1Value & MASK_PWM_FREQUENCY) >> PWM_SHIFT_FREQ;
-            if(reloadValue == 0) {
-                sprintf(Message_Ptr, "nope..."); // iets met delen door 0
-                break;
-            }
-            sprintf(Message_Ptr, "PWM1 raw: %d, freq: %dHz", reloadValue, map_freq(reloadValue));
-            break;
-        }
-        case 2: {
-            int dutyValue = (PWM1Value & MASK_PWM_DUTY);
-            if(dutyValue == 0) {
-                sprintf(Message_Ptr, "nope..."); // iets met delen door 0
-                break;
-            }
-            sprintf(Message_Ptr, "PWM1 raw: %d, duty: %d%%", dutyValue, map_duty(dutyValue));
-            break;
-        }
-        case 3: {
-            bool enabled = (PWM2Value & MASK_PWM_ENABLE) != 0;
-            sprintf(Message_Ptr, "PWM2 enabled: %s", enabled ? "Yes" : "No");
-            break;
-        }
-        case 4: {
-            int reloadValue = (PWM2Value & MASK_PWM_FREQUENCY) >> PWM_SHIFT_FREQ;
-            if(reloadValue == 0) {
-                sprintf(Message_Ptr, "nope..."); // iets met delen door 0
-                break;
-            }
-            sprintf(Message_Ptr, "PWM2 raw: %d, freq: %dHz", reloadValue, map_freq(reloadValue));
-            break;
-        }
-        case 5: {
-            int dutyValue = (PWM2Value & MASK_PWM_DUTY);
-            if(dutyValue == 0) {
-                sprintf(Message_Ptr, "nope..."); // iets met delen door 0
-                break;
-            }
-            sprintf(Message_Ptr, "PWM2 raw: %d, duty: %d%%", dutyValue, map_duty(dutyValue));
-            break;
-        }*/
-        default:
-            sprintf(Message_Ptr, "nope break...");
-            break;
+    if (minor != 0) {
+        printk(KERN_ERR "Wrong minor number, expected 0");
+        return -EINVAL;
+    }
+
+    if (*Message_Ptr == '\0') {
+        printk(KERN_INFO "End of message.");
+        return 0;
+    }
+
+    if (selectedPort.Bit < 1) {
+        sprintf(Message_Ptr, "No port selected");
+    }
+
+    else {
+        int rawDirection = *(unsigned int*)(io_p2v(selectedPort.RegDIR + STATE_OFFSET));
+        int rawInputState = *(unsigned int*)(io_p2v(selectedPort.RegINP));
+        jumper = selectedPort.Jumper;
+        port = selectedPort.PhysicalPin;
+        
+        direction = rawDirection;// & selectedPort.Bit;
+        inputstate = rawInputState;// & selectedPort.Bit;
+        printk(KERN_INFO "Addr: %x, Val: %d", selectedPort.RegINP, inputstate);
+
+        sprintf(Message_Ptr, "J%d.%d Dir: %d In: %d", jumper, port, direction, inputstate);
     }
 
     // cpy_to_usr somehow
@@ -145,24 +106,67 @@ static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_
 
 static ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t *off) {
     int minor = (int)filp->private_data;
-    
-    int i;
-    // copy_from_user
-    for (i = 0; i < len && i < BUF_LEN; i++) {
-        get_user(Message[i], buff + i);
+    char command = 'x';
+    unsigned int jumper = 0;
+    unsigned int pin = 0;
+    PortInfo port;
+    int Message_Index;
+
+    if (minor != 0) {
+        printk(KERN_ERR "Wrong minor number, expected 0");
+        return -EINVAL;
+    }
+
+    for (Message_Index = 0; Message_Index < len && Message_Index < BUF_LEN; Message_Index++) {
+        get_user(Message[Message_Index], buff + Message_Index);
     }
 
     Message_Ptr = Message;
     
-    //sscanf(Message_Ptr, "%d", &valueToWrite);
 
-    /*if(valueToWrite < 0 && valueToWrite > 255) {
-        printk(KERN_INFO "nope...");
-        return len;
-    }*/
+    if (sscanf(Message_Ptr, "%c J%d.%d", &command, &jumper, &pin) != 3) {
+        printk(KERN_ERR "Wrong input. Expected: [r, h, l] J[jumper].[pin]");
+        return -EINVAL;        
+    }
 
-    //schakelcasus
-    return i;
+    if (jumper < 1 || jumper > 3) {
+        printk(KERN_ERR "Unsupported jumper");
+        return -EINVAL;
+    }
+
+    port = GetJumperPinVal(jumper, pin, false);
+
+    if (port.Bit < 1) { 
+        printk(KERN_ERR "J%d.%d is not supported for GPIO", jumper, pin);
+        return -EINVAL;
+    }
+
+    if (command == 'r') {
+        printk(KERN_INFO "J%d.%d set for read", jumper, pin);
+        if (jumper == 1 && pin == 24 ||
+            jumper == 3 && pin == 54 ||
+            jumper == 3 && pin == 46 ||
+            jumper == 3 && pin == 36) {
+            selectedPort = GetJumperPinVal(jumper, pin, true);
+        }
+        else {
+            selectedPort = port;
+        }
+    }
+    else if (command == 'h') {
+        memcpy(io_p2v(port.RegOUT + SET_OFFSET),&port.Bit,sizeof(unsigned int));
+        printk(KERN_INFO "J%d.%d high", jumper, pin);
+    }
+    else if (command == 'l') {
+        memcpy(io_p2v(port.RegOUT + CLR_OFFSET),&port.Bit,sizeof(unsigned int));
+        printk(KERN_INFO "J%d.%d low", jumper, pin);
+    }
+    else {
+        printk(KERN_ERR "Invalid command");
+        return -EINVAL;
+    }
+
+    return Message_Index;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -190,11 +194,10 @@ sysfs_store(struct device *dev,
     char command = 'x';
     unsigned int jumper = 0;
     unsigned int pin = 0;
-    PortInfo port = { 0, 0, 0 };
-    int allBits = 0;
+    PortInfo port;
 
     if (sscanf(buffer, "%c J%d.%d", &command, &jumper, &pin) != 3) {
-        printk(KERN_ERR "Wrong input. Expected format: [i, o] [jumper number] [pin number]");
+        printk(KERN_ERR "Wrong input. Expected: [i, o] J[jumper].[pin]");
         return -EINVAL;        
     }
 
@@ -204,23 +207,22 @@ sysfs_store(struct device *dev,
     }
 
     // A valid bit should be >= 1
-    port = GetJumperPinVal(jumper, pin);
+    port = GetJumperPinVal(jumper, pin, false);
 
     if (port.Bit < 1) { 
         printk(KERN_ERR "J%d.%d is not supported for GPIO", jumper, pin);
         return -EINVAL;
     }
-    allBits = 0 | port.Bit; // TODO : Fill existing register
 
     // TODO : Use base + offset instead of hardcoded to allow for
     // an arbitrary register 
     if (command == 'i') {
         printk(KERN_INFO "J%d.%d set to INPUT", jumper, pin);
-        memcpy(io_p2v(P2_DIR_CLR),&allBits,sizeof(unsigned int));
+        memcpy(io_p2v(port.RegDIR + CLR_OFFSET),&port.Bit,sizeof(unsigned int));
     }
     else if (command == 'o') {
         printk(KERN_INFO "J%d.%d set to OUTPUT", jumper, pin);
-        memcpy(io_p2v(P2_DIR_SET),&allBits,sizeof(unsigned int));
+        memcpy(io_p2v(port.RegDIR + SET_OFFSET),&port.Bit,sizeof(unsigned int));
     }
     else {
         printk(KERN_ERR "Invalid command");
@@ -248,9 +250,21 @@ static struct file_operations fops = {
     .release = device_release
 };
 
+void gpio_init_ports(void) {
+    *(unsigned int*)(io_p2v(P2_MUX_SET)) = VAL_MUX;
+
+    *(unsigned int*)(io_p2v(REG_LCDCONFIG)) = VAL_LCDCONFIG;
+}
+
 int __init gpio_init(void) {
     int result = 0;
+
     int major = register_chrdev(DEVICE_MAJOR, DEVICE_NAME, &fops);
+    
+    if (major < 0) {
+        printk ("Registering the character device failed");
+        return major;
+    }
 
     gpio_kobj = kobject_create_and_add(sysfs_dir, kernel_kobj);
     if (gpio_kobj == NULL) {
@@ -266,13 +280,10 @@ int __init gpio_init(void) {
     }
 
     printk(KERN_INFO "/sys/kernel/%s/%s created\n", sysfs_dir, sysfs_file);
+    printk(KERN_INFO "Registering chardev success, run:\n");
+    printk(KERN_INFO "mknod /dev/%s c %d [minor_number]",DEVICE_NAME, DEVICE_MAJOR);
 
-    if (major < 0) {
-        printk ("Registering the character device failed");
-        return major;
-    }
-    printk("Registering the character device succesfull");
-
+    gpio_init_ports();
     return result;
 }
 

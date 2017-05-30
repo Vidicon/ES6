@@ -1,17 +1,7 @@
 #ifndef PORTS_H
 #define PORTS_H
-/*
-#define J3_47     1
-#define J3_56     2
-#define J3_48     4
-#define J3_57     8
-#define J3_49    16
-#define J3_58    32
-#define J3_50    64
-#define J3_45   128
-*/
 
-#define P2_BASE_REG 	0x40028010
+#include "regs.h"
 
 /*
  * The problem is that there are three J-headers which have accessible
@@ -29,39 +19,66 @@
 
 struct PortCombo {
     int PhysicalPin;
-    uint32_t Register;
+    uint32_t RegDIR;
+    uint32_t RegOUT;
+    uint32_t RegINP;
     int Bit;
+    int Jumper;
 };
 
 typedef struct PortCombo PortInfo;
 
 static PortInfo J1_Pins[] = {
-	{ 49, P2_BASE_REG, 256 },
-	{ 50, P2_BASE_REG, 512 },
-	{ 51, P2_BASE_REG, 1024 },
-	{ 52, P2_BASE_REG, 2048 },
-	{ 53, P2_BASE_REG, 4096 },
+	{ 49, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 8 , 1 },
+	{ 50, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 9 , 1 },
+	{ 51, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 10, 1 },
+	{ 52, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 11, 1 },
+	{ 53, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 12, 1 },
+	{ 24, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 30, 1 },
+	{ 27, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 7 , 1 },
 };
 
 static PortInfo J2_Pins[] = {
-	
+	{ 24, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 1, 2 },
+	{ 11, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 2, 2 },
+	{ 12, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 3, 2 },
+	{ 13, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 4, 2 },
+	{ 14, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 5, 2 },
 };
 
 static PortInfo J3_Pins[] = {
-	{ 47, P2_BASE_REG, 1 },
-	{ 56, P2_BASE_REG, 2 }, 
-	{ 48, P2_BASE_REG, 4 },
-	{ 57, P2_BASE_REG, 8 },
-	{ 49, P2_BASE_REG, 16 },
-	{ 58, P2_BASE_REG, 32 },
-	{ 50, P2_BASE_REG, 64 },
-	{ 45, P2_BASE_REG, 128 },
+	{ 47, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 0 , 3 },
+	{ 56, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 1 , 3 }, 
+	{ 48, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 2 , 3 },
+	{ 57, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 3 , 3 },
+	{ 49, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 4 , 3 },
+	{ 58, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 5 , 3 },
+	{ 50, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 6 , 3 },
+	{ 45, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 7 , 3 },
+	{ 54, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 25, 3 },
+	{ 46, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 26, 3 },
+	{ 36, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 29, 3 },
+	
+	{ 40, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 0, 4 },
+	{ 33, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 6, 4 },
 };
 
-static PortInfo getValueFromPortInfo(PortInfo* header, int pinToFind) {
-	PortInfo defaultPort = { 0, 0, 0 };
+static PortInfo J1_Pins_Read[] = {	
+	{ 24, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 24, 1},
+};
+
+static PortInfo J3_Pins_Read[] = {
+	{ 54, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 10, 3},
+	{ 46, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 11, 3},
+	{ 36, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 14, 3},
+};
+
+
+
+static PortInfo getValueFromPortInfo(PortInfo* header, size_t headerSize, int pinToFind) {
+	PortInfo defaultPort = { 0, 0, 0, 0, 0 };
 	int i = 0;
-	int items = sizeof(header)/sizeof(PortInfo);
+	int items = headerSize;
 	for (i = 0; i < items; i++) {
 		if (header[i].PhysicalPin == pinToFind) {
 			return header[i];
@@ -70,17 +87,38 @@ static PortInfo getValueFromPortInfo(PortInfo* header, int pinToFind) {
 	return defaultPort;
 }
 
-static PortInfo GetJumperPinVal(int jumper, int pin) {
-	PortInfo defaultPort = { 0, 0, 0 };
+static PortInfo GetJumperPinVal(int jumper, int pin, bool P3_read_input) {
+	PortInfo defaultPort = { 0, 0, 0, 0, 0 };
+	size_t size;
+
+	if (P3_read_input) {
+		switch(jumper) {
+			case 1: {
+				size = sizeof(J1_Pins_Read)/sizeof(J1_Pins_Read[0]);
+				return getValueFromPortInfo(J1_Pins_Read, size, pin);
+			}
+			case 3: {
+				size = sizeof(J3_Pins_Read)/sizeof(J3_Pins_Read[0]);
+				return getValueFromPortInfo(J3_Pins_Read, size, pin);
+			}
+			default:
+				return defaultPort;
+		}
+	}
+
+
 	switch(jumper) {
 		case 1: {
-			return getValueFromPortInfo(J1_Pins, pin);
+			size = sizeof(J1_Pins)/sizeof(J1_Pins[0]);
+			return getValueFromPortInfo(J1_Pins, size, pin);
 		}
 		case 2: {
-			return getValueFromPortInfo(J2_Pins, pin);
+			size = sizeof(J2_Pins)/sizeof(J2_Pins[0]);
+			return getValueFromPortInfo(J2_Pins, size, pin);
 		}
 		case 3: {
-			return getValueFromPortInfo(J3_Pins, pin);
+			size = sizeof(J3_Pins)/sizeof(J3_Pins[0]);
+			return getValueFromPortInfo(J3_Pins, size, pin);
 		}
 		default:
 			return defaultPort;

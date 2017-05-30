@@ -4,7 +4,7 @@
  */
 #include <linux/kernel.h>	/* We're doing kernel work */
 #include <linux/module.h>	/* Specifically, a module */
-#include <linux/kobject.h>   /* Necessary because we use sysfs */
+#include <linux/kobject.h>  /* Necessary because we use sysfs */
 #include <linux/device.h>
 #include <mach/hardware.h>
 
