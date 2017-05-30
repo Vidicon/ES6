@@ -10,19 +10,37 @@
 #define J3_50    64
 #define J3_45   128
 */
+
+#define P2_BASE_REG 	0x40028010
+
+/*
+ * The problem is that there are three J-headers which have accessible
+ * GPIO pins, but these pins don't match how they are laid out in the
+ * registers at all. There's also the problem of there being multiple
+ * registers to choose from.
+ *
+ * We came up with the following - create three arrays which contain all 
+ * accessible GPIO pins. This is mapped to an internal bit from the 
+ * register they belong to. Since the Y in JX.Y is unique per X, we can
+ * then use that to iterate over the array to find. For the protocol
+ * we allow the user to access a pin by "JX.Y", so we can choose which
+ * port set we want by that first number.
+ */
+
 struct PortCombo {
-    int PortNumber;
-    int InternalPin;
+    int PhysicalPin;
+    uint32_t Register;
+    int Bit;
 };
 
 typedef struct PortCombo PortInfo;
 
 static PortInfo J1_Pins[] = {
-	{ 49, 256 },
-	{ 50, 512 },
-	{ 51, 1024 },
-	{ 52, 2048 },
-	{ 53, 4096 },
+	{ 49, P2_BASE_REG, 256 },
+	{ 50, P2_BASE_REG, 512 },
+	{ 51, P2_BASE_REG, 1024 },
+	{ 52, P2_BASE_REG, 2048 },
+	{ 53, P2_BASE_REG, 4096 },
 };
 
 static PortInfo J2_Pins[] = {
@@ -30,28 +48,30 @@ static PortInfo J2_Pins[] = {
 };
 
 static PortInfo J3_Pins[] = {
-	{ 47, 1 },
-	{ 56, 2 }, 
-	{ 48, 4 },
-	{ 57, 8 },
-	{ 49, 16 },
-	{ 58, 32 },
-	{ 50, 64 },
-	{ 45, 128 },
+	{ 47, P2_BASE_REG, 1 },
+	{ 56, P2_BASE_REG, 2 }, 
+	{ 48, P2_BASE_REG, 4 },
+	{ 57, P2_BASE_REG, 8 },
+	{ 49, P2_BASE_REG, 16 },
+	{ 58, P2_BASE_REG, 32 },
+	{ 50, P2_BASE_REG, 64 },
+	{ 45, P2_BASE_REG, 128 },
 };
 
-static int getValueFromPortInfo(PortInfo* header, int pinToFind) {
+static PortInfo getValueFromPortInfo(PortInfo* header, int pinToFind) {
+	PortInfo defaultPort = { 0, 0, 0 };
 	int i = 0;
 	int items = sizeof(header)/sizeof(PortInfo);
 	for (i = 0; i < items; i++) {
-		if (header[i].PortNumber == pinToFind) {
-			return header[i].InternalPin;
+		if (header[i].PhysicalPin == pinToFind) {
+			return header[i];
 		}
 	}
-	return -1;
+	return defaultPort;
 }
 
-static int GetJumperPinVal(int jumper, int pin) {
+static PortInfo GetJumperPinVal(int jumper, int pin) {
+	PortInfo defaultPort = { 0, 0, 0 };
 	switch(jumper) {
 		case 1: {
 			return getValueFromPortInfo(J1_Pins, pin);
@@ -63,7 +83,7 @@ static int GetJumperPinVal(int jumper, int pin) {
 			return getValueFromPortInfo(J3_Pins, pin);
 		}
 		default:
-			return -1;
+			return defaultPort;
 	}
 }
 

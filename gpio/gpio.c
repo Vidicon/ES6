@@ -11,11 +11,6 @@
 /*
  * P2 GPIO control registers
  */
-// in the init thing
-#define P2_MUX_SET          0x40028028  // WO   Write '1' to bit 3 to set EMC_D[31:19] pins being configured as GPIO pins P2[12:0]
-#define P2_MUX_CLR          0x4002802C  // WO   Write '1' to clear P2 MUX STATE
-#define P2_MUX_STATE        0x40028030  // RO   Is 0 bit
-
 // 0 is input, 1 is output
 // this is /sys/
 #define P2_DIR_SET          0x40028010  // WO   Write '1' to set P2.[bit] to Output
@@ -27,16 +22,17 @@
 #define P2_OUTP_SET         0x40028020  // WO   Writes P2.[bit] output state
 #define P2_OUTP_CLR         0x40028024  // WO   Write '1' to drive P2.[bit] low
 
+// in the init thing
+#define P2_MUX_SET          0x40028028  // WO   Write '1' to bit 3 to set EMC_D[31:19] pins being configured as GPIO pins P2[12:0]
+#define P2_MUX_CLR          0x4002802C  // WO   Write '1' to clear P2 MUX STATE
+#define P2_MUX_STATE        0x40028030  // RO   Is 0 bit
+
 /*
  * sysfs definitions
  */
 #define sysfs_dir           "es6_gpio"
 #define sysfs_file          "gpio"
 #define SYSFS_FILE_MACRO    gpiofs
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// devfs section
-///////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
  * devfs definitions
@@ -56,6 +52,10 @@ static char Message[BUF_LEN];
 static char *Message_Ptr;
 
 int currentPin;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// devfs section
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 static int device_open(struct inode *inode, struct file *file) {
     int minor = MINOR(inode->i_rdev);
@@ -190,10 +190,10 @@ sysfs_store(struct device *dev,
     char command = 'x';
     unsigned int jumper = 0;
     unsigned int pin = 0;
-    int bitToSet = -1;
+    PortInfo port = { 0, 0, 0 };
     int allBits = 0;
 
-    if (sscanf(buffer, "%c %d %d", &command, &jumper, &pin) != 3) {
+    if (sscanf(buffer, "%c J%d.%d", &command, &jumper, &pin) != 3) {
         printk(KERN_ERR "Wrong input. Expected format: [i, o] [jumper number] [pin number]");
         return -EINVAL;        
     }
@@ -204,16 +204,16 @@ sysfs_store(struct device *dev,
     }
 
     // A valid bit should be >= 1
-    // Error = -1
-    // Consider what to do with 0 (our protocol to set all????)
-    bitToSet = GetJumperPinVal(jumper, pin);
-    allBits = 0 | bitToSet; // find shit
+    port = GetJumperPinVal(jumper, pin);
 
-    if (bitToSet < 0) { 
+    if (port.Bit < 1) { 
         printk(KERN_ERR "J%d.%d is not supported for GPIO", jumper, pin);
         return -EINVAL;
     }
+    allBits = 0 | port.Bit; // TODO : Fill existing register
 
+    // TODO : Use base + offset instead of hardcoded to allow for
+    // an arbitrary register 
     if (command == 'i') {
         printk(KERN_INFO "J%d.%d set to INPUT", jumper, pin);
         memcpy(io_p2v(P2_DIR_CLR),&allBits,sizeof(unsigned int));
