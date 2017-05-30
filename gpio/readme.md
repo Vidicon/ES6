@@ -33,10 +33,10 @@ LPC to SODIMM:
 ![LPC-SODIMM](img/lpc-sodimm.PNG)  
   
 SODIMM to OEMBOARD:  
-![SODIMM-OEM](img/sodimm-oem.PNG)  
+![SODIMM-OEM](img/sodimm-oemboard.PNG)  
   
 OEM to J Header:  
-![HEADER](header.PNG)  
+![HEADER](img/header.PNG)  
   
 __PORT 0__  
 Because the LCD screen uses P0.2 - P0.7 we must disable it. This can be done by writing 0 to the LCD_CFG (0x40004054) register. No MUX is needed because the default configuration means you can use the pins for GPIO.
@@ -60,34 +60,7 @@ Because the LCD screen uses P0.2 - P0.7 we must disable it. This can be done by 
 |Input		|-							|-							|0x 4002 8040	P0_INP_STATE
   
 __PORT 1__  
-Iets met wazige bussen...  
-  
-|Bit	|LPC	|SODIMM	|OEM	|J
---------|-------|-------|-------|-------
-|0		|P1.0	|-		|-		|-	
-|1		|P1.1	|-		|-		|-		
-|2		|P1.2	|-		|-		|-		
-|3		|P1.3	|-		|-		|-		
-|4		|P1.4	|-		|-		|-		
-|5		|P1.5	|-		|-		|-		
-|6		|P1.6	|-		|-		|-		
-|7		|P1.7	|-		|-		|-		
-|8		|P1.8	|-		|-		|-		
-|9		|P1.9	|-		|-		|-		
-|10		|P1.10	|-		|-		|-
-|11		|P1.11	|-		|-		|-		
-|12		|P1.12	|-		|-		|-		
-|13		|P1.13	|-		|-		|-		
-|14		|P1.14	|-		|-		|-		
-|15		|P1.15	|-		|-		|-		
-|16		|P1.16	|-		|-		|-		
-|17		|P1.17	|-		|-		|-		
-|18		|P1.18	|-		|-		|-		
-|19		|P1.19	|-		|-		|-		
-|20		|P1.20	|-		|-		|-		
-|21		|P1.21	|-		|-		|-		
-|22		|P1.22	|-		|-		|-		
-|23		|P1.23	|-		|-		|-		
+De GPIO functionaliteit van Port 1 is niet beschikbaar omdat deze gebruikt wordt voor het Static RAM, SDR SDRAM of DDR SDRAM. Als we deze MUX setten crasht het systeem (obvious :p).
   
 __PORT 2__  
 The EMC data pins can be used as general purpose GPIO when 16 bit SDRAM or DDRAM is used. Writing a one to bit 3 in the P2_MUX_SET register results in all of the corresponding EMC_D[31:19] pins being configured as GPIO pins P2[12:0].
@@ -145,13 +118,6 @@ To read the input state from Port 3 you have to use different bits. See table be
 |13		|GPIO_03|-		|-		|-
 |14		|GPIO_04|X1-96	|P1.28	|J3.36
 |24		|GPIO_05|X1-85	|P1.13	|J1.24
-  
-
-  
-To set a port:  
-* First write P2_DIR_SET to the desired pin (1023-regVal for dir)  
-* Then write the same to P2_OUTP_SET (turn on)  
-* Then clear the same to P2_OUTP_CLR (turn off)  
   
 # Code uitleg in't engels
 -------------------------------------------------------------------------------
