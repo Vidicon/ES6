@@ -4,17 +4,11 @@ Minh-Triet Diep
 Lars Jaeqx  
 
 ## Research
-
-P2_MUX_SET write 8 to set the FOURTH BIT (bit 3 wtf)
-Then read P2_MUX_STATE to check this
-P2_DIR_CLR write 63 to set all pins as input
-P2_DIR_STATE read to check if it's correct
-then read P2_INP_STATE to see , reads 1023 when no joy input
-
-poort document source = QVGA_LPC32x0 document
-
+First test the joystick inputs. To enable the GPIO on Port 2 we have to set the MUX. We write the third bit (value = 8) in the P2_MUX_SET. Then read P2_MUX_STATE to check this.
+We write 63 in P2_DIR_CLR to set GPIO0-5 as input. Then read P2_DIR_STATE to check if it's correctly set. Now we read P2_INP_STATE to see the values from the joystick.
+  
 We're reading the following values for the joystick input:
-
+  
 |Joystick  |Register|Bit     |LPC        |J3   |Pins
 -----------|--------|--------|-----------|-----|-------------------------
 |Nothing   |1023    |x       |x          |     |
@@ -25,10 +19,10 @@ We're reading the following values for the joystick input:
 |Up        |1019    |2       |P2.25      |J3.48|(9th pin from bottom/right)
   
 We found the correct Joystick ports using the following image:  
-![JOYSTICK](https://github.com/MrJaeqx/ES6/gpio/master/joystick.png)  
+![JOYSTICK](https://github.com/MrJaeqx/ES6/gpio/joystick.png)  
 
 The registers we found in the documentation:  
-![JOYSTICK](https://github.com/MrJaeqx/ES6/gpio/master/joystick.png)  
+![REGS](https://github.com/MrJaeqx/ES6/gpio/gpio regs.png)  
   
 ## Port mappings:
 To set a port, we traced the LPC pins to the J headers (see tables below), and we connected a LED to check if our peek/poke command worked. Also we tested the input by connecting 3.3V to the pins.
@@ -36,13 +30,13 @@ To set a port, we traced the LPC pins to the J headers (see tables below), and w
 We traced this using the following documentation:  
   
 LPC to SODIMM:  
-![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/master/lpc - sodimm.png)  
+![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/lpc - sodimm.png)  
   
 SODIMM to OEMBOARD:  
-![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/master/sodimm - oem.png)  
+![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/sodimm - oem.png)  
   
 OEM to J Header:  
-![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/master/header.png)  
+![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/header.png)  
   
 __PORT 0__  
 Because the LCD screen uses P0.2 - P0.7 we must disable it. This can be done by writing 0 to the LCD_CFG (0x40004054) register. No MUX is needed because the default configuration means you can use the pins for GPIO.
@@ -162,3 +156,10 @@ To set a port:
 # Code uitleg in't engels
 -------------------------------------------------------------------------------
 iets met code uitleg shizzle
+  
+# Sources
+-------------------------------------------------------------------------------
+LPC3250_OEM_Board_Users_Guide_Rev_B.pdf
+DataSheet-UM10326.pdf
+LPC32x0_OEM_Board_v1.4.pdf
+QVGA_Base_Board_v1.2.pdf
