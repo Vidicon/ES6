@@ -120,7 +120,7 @@ Bit		|LPC	|SODIMM	|OEM	|J
 24		|GPIO_05|X1-85	|P1.13	|J1.24
   
   
-# Code explanation
+# Implementation details
 -------------------------------------------------------------------------------
 The kernel module contains both sysfs and devfs parts. The point is to use 
 devfs for controlling the hardware and sysfs for configuring the hardware. Our
@@ -135,16 +135,53 @@ devfs:
 * `echo [r, h, l] J[jumper].[pin]` to `/dev/gpio`
 * `cat /dev/gpio`
   
-Where `r` sets the selected jumper, pin combination for reading with `cat`, 
-and `h` and `l` will set the pin to high and low respectively. When the pin is
-not set as output, these values will still be written to the registers, but 
-nothing will happen. The assumption is that a userspace program will handle
-these situations.  
-  
-When an invalid pin is chosen, the kernel will give an error indicating this.  
+Where `r` sets the selected jumper + pin combination for reading, 
+and `h` and `l` will set the pin to high and low respectively.
+
+Both parts will check if a valid jumper is selected, as well as checking if
+the pin on that jumper is supported for GPIO. If not, an error message is 
+shown.
+
+On devfs, when the pin is not set as output the values will still be written
+ to the registers. The assumption is that a userspace program will handle 
+ these situations, as these values are ignored anyway.  
+
+When initialized, the kernel module will enable the GPIO on P2. This isn't 
+needed for the other ports. P0 does need the LCD to be disabled, which also
+happens on initialization. The rest of the initialization consists of 
+registering a character device and creating a sysfs device.
+
+Because of the large amount of registers that are used, these are defined in a
+separate header file. We found that even though the registers' addresses don't
+follow up each other nicely, the _SET, _CLR and _STATE addresses are always 4 
+apart.
+
+We used this to our advantage, so we only needed to store the _SET registers. 
+This can be seen in the header containing the mapping of physical ports to the
+bits in the registers they correspond to. These relations have been mapped out
+and are shown in the earlier sections.
+
+A structure was defined which contained the following information:
+* Physical pin
+* Direction register
+* Output register
+* Input register
+* The bit it's mapped to
+* A jumper number
+
+## // TODO: Consider jamming it all in 1 big array?
+The structure above was put in arrays. We can loop over these arrays, so 
+this makes finding the data for a specific hardware pin easy and should keep
+the data structures small. When a pin-port combination isn't found, we just 
+return a data structure with 0-values. In the main program, validity of a 
+returned data structure is checked by the bit, which should always be higher
+than zero.  
   
 # Proof of Concept
 -------------------------------------------------------------------------------
+This proof of concept shows we can turn on and off a pin by its address by 
+talking to its physical pin name.  
+  
 ![DEMO_ON](img/demo_on.jpg)  
   
 ![DEMO_OFF](img/demo_off.jpg)  
