@@ -19,10 +19,10 @@ We're reading the following values for the joystick input:
 |Up        |1019    |2       |P2.25      |J3.48|(9th pin from bottom/right)
   
 We found the correct Joystick ports using the following image:  
-![JOYSTICK](https://github.com/MrJaeqx/ES6/gpio/joystick.png)  
+![JOYSTICK](joystick.PNG)  
 
-The registers we found in the documentation:  
-![REGS](https://github.com/MrJaeqx/ES6/gpio/gpio regs.png)  
+The registers were found in the documentation:  
+![REGS](gpio regs.PNG)  
   
 ## Port mappings:
 To set a port, we traced the LPC pins to the J headers (see tables below), and we connected a LED to check if our peek/poke command worked. Also we tested the input by connecting 3.3V to the pins.
@@ -30,13 +30,13 @@ To set a port, we traced the LPC pins to the J headers (see tables below), and w
 We traced this using the following documentation:  
   
 LPC to SODIMM:  
-![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/lpc - sodimm.png)  
+![LPC-SODIMM](lpc - sodimm.PNG)  
   
 SODIMM to OEMBOARD:  
-![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/sodimm - oem.png)  
+![LPC-SODIMM](sodimm - oem.PNG)  
   
 OEM to J Header:  
-![LPC-SODIMM](https://github.com/MrJaeqx/ES6/gpio/header.png)  
+![LPC-SODIMM](header.PNG)  
   
 __PORT 0__  
 Because the LCD screen uses P0.2 - P0.7 we must disable it. This can be done by writing 0 to the LCD_CFG (0x40004054) register. No MUX is needed because the default configuration means you can use the pins for GPIO.
@@ -159,7 +159,7 @@ iets met code uitleg shizzle
   
 # Sources
 -------------------------------------------------------------------------------
-LPC3250_OEM_Board_Users_Guide_Rev_B.pdf
-DataSheet-UM10326.pdf
-LPC32x0_OEM_Board_v1.4.pdf
-QVGA_Base_Board_v1.2.pdf
+[LPC3250_OEM_Board_Users_Guide_Rev_B](..//LPC3250/LPC3250_OEM_Board_Users_Guide_Rev_B.pdf)  
+[DataSheet-UM10326](../LPC3250/DataSheet-UM10326.pdf)  
+[LPC32x0_OEM_Board_v1.4](../LPC32x0_OEM_Board_v1.4.pdf)  
+[QVGA_Base_Board_v1.2](../QVGA_Base_Board_v1.2.pdf)  
