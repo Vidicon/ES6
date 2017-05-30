@@ -69,7 +69,8 @@ __PORT 1__
 |4194304|P1.22	|		|		|		
 |8338608|P1.23	|		|		|		
   
-__PORT 2__ 
+__PORT 2__
+The EMC data pins can be used as general purpose GPIO when 16 bit SDRAM or DDRAM is used. Writing a one to bit 3 in the P2_MUX_SET register results in all of the corresponding EMC_D[31:19] pins being configured as GPIO pins P2[12:0].
   
 |Value	|LPC	|SODIMM	|OEM	|J
 --------|-------|-------|-------|-------
@@ -87,17 +88,40 @@ __PORT 2__
 |2048	|P2.11	|X1-182 |P3.24	|J1.52
 |4096	|P2.12	|X1-184 |P3.23	|J1.53
   
+|Operation	|Set						|Clear						|State						
+------------|---------------------------|---------------------------|----------------------------
+|Mux		|0x 4002 8028	P2_MUX_SET	|0x 4002 802C	P2_MUX_CLR	|0x 4002 8030	P2_MUX_STATE
+|Direction	|0x 4002 8010	P2_DIR_SET	|0x 4002 8014	P2_DIR_CLR	|0x 4002 8018	P2_DIR_STATE
+|Output		|0x 4002 8020	P2_OUTP_SET	|0x 4002 8024	P2_OUTP_CLR	|-
+|Input		|-							|-							|0x 4002 801C	P2_INP_STATE
+  
+Example to set Pin J3.47 on  
+8 > 0x4002 8028		P2_MUX_SET  
+1 > 0x4002 8010		P2_DIR_SET  
+1 > 0x4002 8020		P2_OUTP_SET  
+  
 __PORT 3__  
 
 |Value	|LPC	|SODIMM	|OEM	|J
 --------|-------|-------|-------|-------
-|1		|P3.0	|X1-117	|P2.15	|J3.54
-|2		|P3.1	|X1-118	|P2.19	|J3.46
-|4		|P3.2	|		|		|
-|8		|P3.3	|		|		|
-|16		|P3.4	|X1-96	|P1.28	|J3.36
-|32		|P3.5	|X1-85	|P1.13	|J1.24
+|2^25	|GPIO_00|X1-117	|P2.15	|J3.54
+|2^26	|GPIO_01|X1-118	|P2.19	|J3.46
+|2^27	|GPIO_02|-		|-		|-
+|2^28	|GPIO_03|-		|-		|-
+|2^29	|GPIO_04|X1-96	|P1.28	|J3.36
+|2^30	|GPIO_05|X1-85	|P1.13	|J1.24
   
+|Operation	|Set						|Clear						|State						
+------------|---------------------------|---------------------------|----------------------------
+|Mux		|-							|-							|-
+|Direction	|0x 4002 8010	P2_DIR_SET	|0x 4002 8014	P2_DIR_CLR	|0x 4002 8018	P2_DIR_STATE
+|Output		|0x 4002 8004	P3_OUTP_SET	|0x 4002 8008	P3_OUTP_CLR	|0x 4002 800C	P3_OUTP_STATE
+|Input		|-							|-							|0x 4002 8000	P3_INP_STATE
+  
+Example to set Pin J3.54
+33554432 > 0x4002 8010		P2_DIR_SET  
+33554432 > 0x4002 8004		P3_OUTP_SET  
+
 To set a port, we traced the LPC pins to the J headers (see table above),
 and we connected a LED to check if our peek/poke command worked.
 
