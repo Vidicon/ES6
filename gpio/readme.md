@@ -119,9 +119,35 @@ Bit		|LPC	|SODIMM	|OEM	|J
 14		|GPIO_04|X1-96	|P1.28	|J3.36
 24		|GPIO_05|X1-85	|P1.13	|J1.24
   
-# Code uitleg in't engels
+  
+# Code explanation
 -------------------------------------------------------------------------------
-iets met code uitleg shizzle
+The kernel module contains both sysfs and devfs parts. The point is to use 
+devfs for controlling the hardware and sysfs for configuring the hardware. Our
+chosen protocol is as following:  
+  
+sysfs:  
+* `echo [i, o] J[jumper].[pin]` to `/sys/kernel/es6_gpio/gpiofs`
+  
+Where `i` configures the pin on the jumper to input, and `o` sets it to output.  
+  
+devfs:  
+* `echo [r, h, l] J[jumper].[pin]` to `/dev/gpio`
+* `cat /dev/gpio`
+  
+Where `r` sets the selected jumper, pin combination for reading with `cat`, 
+and `h` and `l` will set the pin to high and low respectively. When the pin is
+not set as output, these values will still be written to the registers, but 
+nothing will happen. The assumption is that a userspace program will handle
+these situations.  
+  
+When an invalid pin is chosen, the kernel will give an error indicating this.  
+  
+# Proof of Concept
+-------------------------------------------------------------------------------
+![DEMO_ON](img/demo_on.jpg)  
+  
+![DEMO_OFF](img/demo_off.jpg)  
   
 # Sources
 -------------------------------------------------------------------------------
