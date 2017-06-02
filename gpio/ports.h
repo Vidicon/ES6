@@ -28,7 +28,7 @@ struct PortCombo {
 
 typedef struct PortCombo PortInfo;
 
-static PortInfo J1_Pins[] = {
+static PortInfo Jumper_Pins[] = {
 	{ 49, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 8 , 1 },
 	{ 50, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 9 , 1 },
 	{ 51, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 10, 1 },
@@ -36,17 +36,11 @@ static PortInfo J1_Pins[] = {
 	{ 53, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 12, 1 },
 	{ 24, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 30, 1 },
 	{ 27, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 7 , 1 },
-};
-
-static PortInfo J2_Pins[] = {
 	{ 24, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 1, 2 },
 	{ 11, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 2, 2 },
 	{ 12, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 3, 2 },
 	{ 13, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 4, 2 },
 	{ 14, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 5, 2 },
-};
-
-static PortInfo J3_Pins[] = {
 	{ 47, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 0 , 3 },
 	{ 56, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 1 , 3 }, 
 	{ 48, P2_DIR_SET, P2_OUTP_SET, P2_INP_STATE, 1 << 2 , 3 },
@@ -58,29 +52,24 @@ static PortInfo J3_Pins[] = {
 	{ 54, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 25, 3 },
 	{ 46, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 26, 3 },
 	{ 36, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 29, 3 },
-	
 	{ 40, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 0, 4 },
 	{ 33, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 6, 4 },
 };
 
-static PortInfo J1_Pins_Read[] = {	
+static PortInfo Jumper_Pins_Read[] = {	
 	{ 24, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 24, 1},
-};
-
-static PortInfo J3_Pins_Read[] = {
 	{ 54, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 10, 3},
 	{ 46, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 11, 3},
 	{ 36, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 14, 3},
 };
 
-
-
-static PortInfo getValueFromPortInfo(PortInfo* header, size_t headerSize, int pinToFind) {
+static PortInfo getValueFromPortInfo(PortInfo* header, size_t headerSize, int pinToFind, int jumper) {
 	PortInfo defaultPort = { 0, 0, 0, 0, 0 };
 	int i = 0;
 	int items = headerSize;
 	for (i = 0; i < items; i++) {
-		if (header[i].PhysicalPin == pinToFind) {
+		if (header[i].Jumper == jumper &&
+			header[i].PhysicalPin == pinToFind) {
 			return header[i];
 		}
 	}
@@ -88,40 +77,14 @@ static PortInfo getValueFromPortInfo(PortInfo* header, size_t headerSize, int pi
 }
 
 static PortInfo GetJumperPinVal(int jumper, int pin, bool P3_read_input) {
-	PortInfo defaultPort = { 0, 0, 0, 0, 0 };
 	size_t size;
-
 	if (P3_read_input) {
-		switch(jumper) {
-			case 1: {
-				size = sizeof(J1_Pins_Read)/sizeof(J1_Pins_Read[0]);
-				return getValueFromPortInfo(J1_Pins_Read, size, pin);
-			}
-			case 3: {
-				size = sizeof(J3_Pins_Read)/sizeof(J3_Pins_Read[0]);
-				return getValueFromPortInfo(J3_Pins_Read, size, pin);
-			}
-			default:
-				return defaultPort;
-		}
+		size = sizeof(Jumper_Pins_Read)/sizeof(Jumper_Pins_Read[0]);
+		return getValueFromPortInfo(Jumper_Pins_Read, size, pin, jumper);
 	}
-
-
-	switch(jumper) {
-		case 1: {
-			size = sizeof(J1_Pins)/sizeof(J1_Pins[0]);
-			return getValueFromPortInfo(J1_Pins, size, pin);
-		}
-		case 2: {
-			size = sizeof(J2_Pins)/sizeof(J2_Pins[0]);
-			return getValueFromPortInfo(J2_Pins, size, pin);
-		}
-		case 3: {
-			size = sizeof(J3_Pins)/sizeof(J3_Pins[0]);
-			return getValueFromPortInfo(J3_Pins, size, pin);
-		}
-		default:
-			return defaultPort;
+	else {
+		size = sizeof(Jumper_Pins)/sizeof(Jumper_Pins[0]);
+		return getValueFromPortInfo(Jumper_Pins, size, pin, jumper);
 	}
 }
 

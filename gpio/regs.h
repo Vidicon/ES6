@@ -1,6 +1,10 @@
 #ifndef REGS_H
 #define REGS_H
 
+#define REG_LCDCONFIG       0x40004054  //= 0
+#define VAL_LCDCONFIG       0
+#define VAL_MUX             8
+
 /*
  * Due to there being lots of registers to configure and control the
  * GPIO pins, we'll just keep them here. 

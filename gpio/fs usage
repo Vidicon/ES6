@@ -1,8 +1,0 @@
-devfs
-major 137
-
-minor 0 - read/write gpio direction
-minor 1 - read/write gpio state
-
-sysfs
-echo "i/o $(header pin)"

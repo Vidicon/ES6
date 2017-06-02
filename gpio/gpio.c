@@ -9,10 +9,6 @@
 #include "regs.h"
 #include "ports.h"
 
-#define REG_LCDCONFIG       0x40004054  //= 0
-#define VAL_LCDCONFIG       0
-#define VAL_MUX             8
-
 /*
  * sysfs definitions
  */
@@ -65,7 +61,10 @@ static int device_release(struct inode *inode, struct file *file) {
 static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t *offset) {
     int bytes_read = 0;
     int minor = (int)filp->private_data;
-    
+    int jumper, port, direction, inputstate;
+    unsigned int rawDirection;
+    unsigned int rawInputState;
+
     if (minor != 0) {
         printk(KERN_ERR "Wrong minor number, expected 0");
         return -EINVAL;
@@ -79,9 +78,8 @@ static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_
         return 0;
     }
 
-    int jumper, port, direction, inputstate;
-    unsigned int rawDirection = *(unsigned int*)(io_p2v(selectedPort.RegDIR + STATE_OFFSET));
-    unsigned int rawInputState = *(unsigned int*)(io_p2v(selectedPort.RegINP));
+    rawDirection = *(unsigned int*)(io_p2v(selectedPort.RegDIR + STATE_OFFSET));
+    rawInputState = *(unsigned int*)(io_p2v(selectedPort.RegINP));
     jumper = selectedPort.Jumper;
     port = selectedPort.PhysicalPin;
     
@@ -140,10 +138,10 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
     if (command == 'r') {
         printk(KERN_INFO "J%d.%d set for read", jumper, pin);
         // These pins use different bits, hence this check
-        if (jumper == 1 && pin == 24 ||
-            jumper == 3 && pin == 54 ||
-            jumper == 3 && pin == 46 ||
-            jumper == 3 && pin == 36) {
+        if ((jumper == 1 && pin == 24) ||
+            (jumper == 3 && pin == 54) ||
+            (jumper == 3 && pin == 46) ||
+            (jumper == 3 && pin == 36)) {
             selectedPort = GetJumperPinVal(jumper, pin, true);
         }
         else {
