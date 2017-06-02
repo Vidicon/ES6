@@ -21,22 +21,32 @@
  */
 #define DEVICE_NAME         "es6_gpio"
 #define DEVICE_MAJOR        137
-
 #define BUF_LEN             80
-
-#define sysfs_max_data_size 1024 /* due to limitations of sysfs, you mustn't go above PAGE_SIZE, 1k is already a *lot* of information for sysfs! */
-static char sysfs_buffer[sysfs_max_data_size+1] = ""; /* an extra byte for the '\0' terminator */
-
-char result_buffer[sysfs_max_data_size+1] = "";
 
 static int deviceIsOpen = 0;
 static char Message[BUF_LEN];
 static char *Message_Ptr;
 static PortInfo selectedPort;
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+static int findPort(int jumper, int pin, bool P3_read, PortInfo *port) {
+    if (jumper < 1 || jumper > 3) {
+        printk(KERN_ERR "Unsupported jumper");
+        return -EINVAL;
+    }
+
+    *port = GetJumperPinVal(jumper, pin, P3_read);
+
+    // A valid bit should be >= 1
+    if (port->Bit < 1) { 
+        printk(KERN_ERR "J%d.%d is not supported for GPIO", jumper, pin);
+        return -EINVAL;
+    }
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // devfs section
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 static int device_open(struct inode *inode, struct file *file) {
     int minor = MINOR(inode->i_rdev);
@@ -47,8 +57,6 @@ static int device_open(struct inode *inode, struct file *file) {
 
     if (deviceIsOpen) return -EBUSY;
     deviceIsOpen++;
-
-    // printk(KERN_INFO "Major: %d, Minor: %d", MAJOR(inode->i_rdev), minor);
 
     return 0;
 }
@@ -83,12 +91,11 @@ static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_
     jumper = selectedPort.Jumper;
     port = selectedPort.PhysicalPin;
     
-    direction = rawDirection & selectedPort.Bit ? 0 : 1;// >> selectedPort.Bit;
-    inputstate = rawInputState & selectedPort.Bit ? 0 : 1;// >> selectedPort.Bit;
+    direction = rawDirection & selectedPort.Bit ? 0 : 1;
+    inputstate = rawInputState & selectedPort.Bit ? 0 : 1;
 
     sprintf(Message_Ptr, "J%d.%d Direction: %u Input: %u", jumper, port, direction, inputstate);
 
-    // cpy_to_usr somehow
     while (length && *Message_Ptr) {
         put_user(*(Message_Ptr++), buffer++);
         length--;
@@ -105,6 +112,7 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
     unsigned int pin = 0;
     PortInfo port;
     int Message_Index;
+    int result;
 
     if (minor != 0) {
         printk(KERN_ERR "Wrong minor number, expected 0");
@@ -123,16 +131,9 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
         return -EINVAL;        
     }
 
-    if (jumper < 1 || jumper > 3) {
-        printk(KERN_ERR "Unsupported jumper");
-        return -EINVAL;
-    }
-
-    port = GetJumperPinVal(jumper, pin, false);
-
-    if (port.Bit < 1) { 
-        printk(KERN_ERR "J%d.%d is not supported for GPIO", jumper, pin);
-        return -EINVAL;
+    result = findPort(jumper, pin, false, &port);
+    if (result < 0) {
+        return result;
     }
 
     if (command == 'r') {
@@ -164,60 +165,50 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
     return Message_Index;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // sysfs section
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 static ssize_t
 sysfs_show(struct device *dev,
            struct device_attribute *attr,
-           char *buffer)
-{
-    printk(KERN_INFO "sysfile_read (/sys/kernel/%s/%s) called\n", sysfs_dir, sysfs_file);
-    
-    /*
-     * The only change here is that we now return sysfs_buffer, rather than a fixed HelloWorld string.
-     */
-    return sprintf(buffer, "%s", sysfs_buffer);
+           char *buffer) {
+    // We just print the manual now
+    ssize_t length = sprintf(buffer, "Usage: \n\
+        echo [i, o] J[jumper].[pin] > /sys/kernel/es6_gpio/gpiofs\n\
+        echo [r, h, l] J[jumper].[pin] > /dev/gpio\n\
+        cat /dev/gpio");
+    return length;
 }
 
 static ssize_t
 sysfs_store(struct device *dev,
             struct device_attribute *attr,
             const char *buffer,
-            size_t count)
-{   
+            size_t count) {   
     char command = 'x';
     unsigned int jumper = 0;
     unsigned int pin = 0;
     PortInfo port;
+    int result;
 
     if (sscanf(buffer, "%c J%d.%d", &command, &jumper, &pin) != 3) {
         printk(KERN_ERR "Wrong input. Expected: [i, o] J[jumper].[pin]");
         return -EINVAL;        
     }
 
-    if (jumper < 1 || jumper > 3) {
-        printk(KERN_ERR "Unsupported jumper");
-        return -EINVAL;
+    result = findPort(jumper, pin, false, &port);
+    if (result < 0) {
+        return result;
     }
 
-    // A valid bit should be >= 1
-    port = GetJumperPinVal(jumper, pin, false);
-
-    if (port.Bit < 1) { 
-        printk(KERN_ERR "J%d.%d is not supported for GPIO", jumper, pin);
-        return -EINVAL;
-    }
-
-    // TODO : Use base + offset instead of hardcoded to allow for
-    // an arbitrary register 
     if (command == 'i') {
         printk(KERN_INFO "J%d.%d set to INPUT", jumper, pin);
-        memcpy(io_p2v(port.RegDIR + CLR_OFFSET),&port.Bit,sizeof(unsigned int));
+        *(unsigned int*)(io_p2v(port.RegDIR + CLR_OFFSET)) = port.Bit;
+
     }
     else if (command == 'o') {
         printk(KERN_INFO "J%d.%d set to OUTPUT", jumper, pin);
-        memcpy(io_p2v(port.RegDIR + SET_OFFSET),&port.Bit,sizeof(unsigned int));
+        *(unsigned int*)(io_p2v(port.RegDIR + SET_OFFSET)) = port.Bit;
     }
     else {
         printk(KERN_ERR "Invalid command");

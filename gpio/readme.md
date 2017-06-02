@@ -172,13 +172,15 @@ A structure was defined which contained the following information:
 * The bit it's mapped to
 * A jumper number
 
-## // TODO: Consider jamming it all in 1 big array?
-The structure above was put in arrays. We can loop over these arrays, so 
-this makes finding the data for a specific hardware pin easy and should keep
-the data structures small. When a pin-port combination isn't found, we just 
-return a data structure with 0-values. In the main program, validity of a 
-returned data structure is checked by the bit, which should always be higher
-than zero.  
+The structure above was put in arrays: One generic one for most purposes,
+and one smaller one because reading P3 uses different registers than writing.
+
+We can loop over these arrays, so this makes finding the data for a specific
+hardware pin easy and should keep the data structures small. When a pin-port 
+combination isn't found, we just return a data structure with 0-values. In 
+the main program, validity of a returned data structure is checked by the 
+bit, which should always be higher than zero.
+
   
 # Proof of Concept
 -------------------------------------------------------------------------------

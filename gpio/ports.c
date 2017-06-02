@@ -30,7 +30,7 @@ static PortInfo Jumper_Pins[] = {
 };
 
 static PortInfo Jumper_Pins_Read[] = {	
-	{ 24, P0_DIR_SET, P0_OUTP_SET, P0_INP_STATE, 1 << 24, 1},
+	{ 24, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 24, 1},
 	{ 54, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 10, 3},
 	{ 46, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 11, 3},
 	{ 36, P2_DIR_SET, P3_OUTP_SET, P3_INP_STATE, 1 << 14, 3},
