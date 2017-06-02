@@ -247,7 +247,6 @@ static struct file_operations fops = {
 
 void gpio_init_ports(void) {
     *(unsigned int*)(io_p2v(P2_MUX_SET)) = VAL_MUX;
-
     *(unsigned int*)(io_p2v(REG_LCDCONFIG)) = VAL_LCDCONFIG;
 }
 
@@ -257,7 +256,7 @@ int __init gpio_init(void) {
     int major = register_chrdev(DEVICE_MAJOR, DEVICE_NAME, &fops);
     
     if (major < 0) {
-        printk ("Registering the character device failed");
+        printk (KERN_ERR "Registering the character device failed\n");
         return major;
     }
 
@@ -276,7 +275,7 @@ int __init gpio_init(void) {
 
     printk(KERN_INFO "/sys/kernel/%s/%s created\n", sysfs_dir, sysfs_file);
     printk(KERN_INFO "Registering chardev success, run:\n");
-    printk(KERN_INFO "mknod /dev/%s c %d [minor_number]",DEVICE_NAME, DEVICE_MAJOR);
+    printk(KERN_INFO "mknod /dev/%s c %d [minor_number]\n",DEVICE_NAME, DEVICE_MAJOR);
 
     gpio_init_ports();
     return result;

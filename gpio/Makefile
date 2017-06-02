@@ -1,3 +1,4 @@
+gpio-objs := gpio-base.o ports.o
 obj-m += gpio.o
 
 CURR=$(shell uname -r)
