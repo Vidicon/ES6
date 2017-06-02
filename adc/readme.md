@@ -4,16 +4,17 @@ Minh-Triet Diep
 Lars Jaeqx  
 
 ## Research
-<what is love?>
+what is love?
 
 # Implementation details
 -------------------------------------------------------------------------------
-<oh baby don't hurt me>
+oh baby don't hurt me
 
 # Proof of Concept
 -------------------------------------------------------------------------------
-<don't hurt me>
+don't hurt me
   
 # Sources
 -------------------------------------------------------------------------------
-<no more>
+no more  
+  
