@@ -39,12 +39,18 @@ If ADC_VALUE isn't read out the AD_STROBE bit will not be reset, this will cause
   
 ![NOREADREG](img/without-readreg.PNG)  
 
-When we read the value the infinte loop will not occur and the intterupt wil occur just once.  
+When we read the value the infinte loop will not occur and the interrupt wil occur just once.  
   
 ![READREG](img/with-readreg.PNG)    
   
 The ADC value is just 10 bits so we have to get this with bit operations.
   
+Now we have a kerneldevice which prints the values of all three ADCs when te interrupt button is pressed. The next step is seperating them to /dev/adc0 - /dev/adc2 so we can cat the value's.  
+  
+### Sleeping kernel
+Because the ADC value isn't directly available we have to wait for the ADC to process the value. This takes some time. You could wait for this with busy waiting, but in a kernel driver this is very, VERY wrong. Instead of this we will put the device_read to sleep and wake it up when the ADC interrupt is triggered. Now we can return the value to user space.  
+  
+To achieve this we use the 
 
 
 # Implementation details
