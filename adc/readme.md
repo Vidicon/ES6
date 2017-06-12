@@ -63,5 +63,4 @@ don't hurt me
   
 # Sources
 -------------------------------------------------------------------------------
-no more  
-  
+[LPC3250_OEM_Board_Users_Guide_Rev_B](../LPC3250/LPC3250_OEM_Board_Users_Guide_Rev_B.pdf)  
