@@ -7,6 +7,9 @@
 #include <mach/hardware.h>
 #include <mach/platform.h>
 #include <mach/irqs.h>
+#include <asm/uaccess.h>
+
+#define BUFFER_SIZE 		1024
 
 #define DEVICE_NAME 		"adc"
 #define ADC_NUMCHANNELS		3
@@ -40,7 +43,7 @@ DECLARE_WAIT_QUEUE_HEAD(adc_handled_event);
 
 static unsigned char	adc_channel = 0;
 static int				adc_values[ADC_NUMCHANNELS] = {0, 0, 0};
-static bool amIdoneDoingADCShit = false; // todo: fix
+static bool 			adc_interrupt_handled = false;
 
 static irqreturn_t      adc_interrupt (int irq, void * dev_id);
 static irqreturn_t      gp_interrupt (int irq, void * dev_id);
@@ -95,8 +98,6 @@ static void adc_init (void)
 
 static void adc_start (unsigned char channel)
 {
-	printk(KERN_INFO "adc_start");
-
 	unsigned long data;
 
 	if (channel >= ADC_NUMCHANNELS)
@@ -120,13 +121,10 @@ static void adc_start (unsigned char channel)
 
 static irqreturn_t adc_interrupt (int irq, void * dev_id)
 {
-	printk(KERN_INFO "adc_interrupt");
-
-	// doe hier wakker maken als met chardev
 	adc_values[adc_channel] = READ_REG(ADC_VALUE) & ADC_VALUE_MASK;
-	printk(KERN_WARNING "ADC(%d)=%d\n", adc_channel, adc_values[adc_channel]);
+	//printk(KERN_WARNING "ADC(%d)=%d\n", adc_channel, adc_values[adc_channel]);
 
-	amIdoneDoingADCShit = true;
+	adc_interrupt_handled = true;
 	wake_up_interruptible(&adc_handled_event);
 
 	// start the next channel:
@@ -140,7 +138,12 @@ static irqreturn_t adc_interrupt (int irq, void * dev_id)
 
 static irqreturn_t gp_interrupt(int irq, void * dev_id)
 {
-	adc_start (0);
+	adc_interrupt_handled = false;
+	adc_start (2);
+	wait_event_interruptible(adc_handled_event, adc_interrupt_handled ); 
+
+	printk(KERN_WARNING "ADC(%d)=%d\n", adc_channel, adc_values[adc_channel]);
+
 
 	return (IRQ_HANDLED);
 }
@@ -153,32 +156,42 @@ static void adc_exit (void)
 }
 
 
-static ssize_t device_read (struct file * file, char __user * buf, size_t length, loff_t * f_pos)
+static ssize_t device_read (struct file * file, char __user *buffer, size_t length, loff_t *f_pos)
 {
 	int     channel = (int) file->private_data;
-	int     bytes_read = 0;
+	char	return_buffer[BUFFER_SIZE];
+	int 	bytesWritten;
+	int 	bytesToWrite;
 
-	printk (KERN_WARNING DEVICE_NAME ":device_read(%d)\n", channel);
+	if (*f_pos > 0) {
+		*f_pos = 0;
+		return 0;
+	}
 
 	if (channel < 0 || channel >= ADC_NUMCHANNELS)
 	{
 		return -EFAULT;
 	}
 
-	amIdoneDoingADCShit = false;
+	adc_interrupt_handled = false;
 	adc_start (channel);
+	wait_event_interruptible(adc_handled_event, adc_interrupt_handled ); 
 
-	// TODO: wait for end-of-conversion,
-	// read adc and copy it into 'buf'
-	// use sleep
-	wait_event_interruptible(adc_handled_event, amIdoneDoingADCShit ); 
+	bytesWritten = sprintf(return_buffer, "%d", adc_values[adc_channel]);
+	bytesToWrite = copy_to_user(buffer, return_buffer, bytesWritten);
+	if (bytesToWrite) {
+		bytesWritten = 0;
+		printk(KERN_ERR "Failed to write to user");
+		return -EFAULT;
+	}
+	printk(KERN_INFO "You should be seeing stuff when cat happens");
 
-	return (bytes_read);
+	*f_pos = bytesWritten;
+	return (bytesWritten);
 }
 
 static int device_open (struct inode * inode, struct file * file)
 {
-	// get channel from 'inode'
 	int channel = 0;
 	int minor = MINOR(inode->i_rdev);
     file->private_data = (void*)minor;
@@ -189,9 +202,7 @@ static int device_open (struct inode * inode, struct file * file)
 
 static int device_release (struct inode * inode, struct file * file)
 {
-	printk (KERN_WARNING DEVICE_NAME ": device_release()\n");
-
-
+	//printk (KERN_WARNING DEVICE_NAME ": device_release()\n");
 	module_put(THIS_MODULE);
 	return 0;
 }
@@ -208,19 +219,17 @@ static struct file_operations fops =
 
 static struct chardev
 {
-	dev_t       dev;
+	dev_t		dev;
 	struct cdev cdev;
 } adcdev;
 
 
 int adcdev_init (void)
 {
-	// try to get a dynamically allocated major number
 	int error = alloc_chrdev_region(&adcdev.dev, 0, ADC_NUMCHANNELS, DEVICE_NAME);;
 
 	if(error < 0)
 	{
-		// failed to get major number for our device.
 		printk(KERN_WARNING DEVICE_NAME ": dynamic allocation of major number failed, error=%d\n", error);
 		return error;
 	}
@@ -234,25 +243,18 @@ int adcdev_init (void)
 	error = cdev_add(&adcdev.cdev, adcdev.dev, ADC_NUMCHANNELS);
 	if(error < 0)
 	{
-		// failed to add our character device to the system
 		printk(KERN_WARNING DEVICE_NAME ": unable to add device, error=%d\n", error);
 		return error;
 	}
 
 	adc_init();
-
 	return 0;
 }
 
-
-/*
- * Cleanup - unregister the appropriate file from /dev
- */
 void cleanup_module()
 {
 	cdev_del(&adcdev.cdev);
 	unregister_chrdev_region(adcdev.dev, ADC_NUMCHANNELS);
-
 	adc_exit();
 }
 
@@ -260,6 +262,5 @@ void cleanup_module()
 module_init(adcdev_init);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Fredje");
+MODULE_AUTHOR("LJ&MT");
 MODULE_DESCRIPTION("ADC Driver");
-
