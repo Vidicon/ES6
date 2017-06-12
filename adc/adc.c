@@ -36,14 +36,11 @@
 #define AD_PDN_STROBE 		1 << 1
 #define ADC_VALUE_MASK		0x3FF
 
-//2 TS_ADC_PDN_CTRL This bit has no effect if AUTO_EN = 1
-//0 = the ADC is in power down. (Default)
-//1 = the ADC is powered up and reset.
-
+DECLARE_WAIT_QUEUE_HEAD(adc_handled_event);
 
 static unsigned char	adc_channel = 0;
 static int				adc_values[ADC_NUMCHANNELS] = {0, 0, 0};
-
+static bool amIdoneDoingADCShit = false; // todo: fix
 
 static irqreturn_t      adc_interrupt (int irq, void * dev_id);
 static irqreturn_t      gp_interrupt (int irq, void * dev_id);
@@ -98,6 +95,8 @@ static void adc_init (void)
 
 static void adc_start (unsigned char channel)
 {
+	printk(KERN_INFO "adc_start");
+
 	unsigned long data;
 
 	if (channel >= ADC_NUMCHANNELS)
@@ -117,7 +116,6 @@ static void adc_start (unsigned char channel)
 	data |= AD_PDN_STROBE;
 	WRITE_REG (data, ADC_CTRL);
 
-	printk(KERN_INFO "adc_start");
 }
 
 static irqreturn_t adc_interrupt (int irq, void * dev_id)
@@ -128,12 +126,15 @@ static irqreturn_t adc_interrupt (int irq, void * dev_id)
 	adc_values[adc_channel] = READ_REG(ADC_VALUE) & ADC_VALUE_MASK;
 	printk(KERN_WARNING "ADC(%d)=%d\n", adc_channel, adc_values[adc_channel]);
 
+	amIdoneDoingADCShit = true;
+	wake_up_interruptible(&adc_handled_event);
+
 	// start the next channel:
-	adc_channel++;
-	if (adc_channel < ADC_NUMCHANNELS)
-	{
-		adc_start (adc_channel);
-	}
+	//adc_channel++;
+	//if (adc_channel < ADC_NUMCHANNELS)
+	//{
+	//	adc_start (adc_channel);
+	//}
 	return (IRQ_HANDLED);
 }
 
@@ -164,11 +165,13 @@ static ssize_t device_read (struct file * file, char __user * buf, size_t length
 		return -EFAULT;
 	}
 
+	amIdoneDoingADCShit = false;
 	adc_start (channel);
 
 	// TODO: wait for end-of-conversion,
 	// read adc and copy it into 'buf'
 	// use sleep
+	wait_event_interruptible(adc_handled_event, amIdoneDoingADCShit ); 
 
 	return (bytes_read);
 }
@@ -177,7 +180,8 @@ static int device_open (struct inode * inode, struct file * file)
 {
 	// get channel from 'inode'
 	int channel = 0;
-
+	int minor = MINOR(inode->i_rdev);
+    file->private_data = (void*)minor;
 
 	try_module_get(THIS_MODULE);
 	return 0;
