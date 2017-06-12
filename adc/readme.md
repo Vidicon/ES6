@@ -10,31 +10,42 @@ To use the interrupt button effectively we have to set the interrupt to edge tri
   
 ![EINT0EDGE](img/SIC2_ATR.PNG)  
   
-The image below shows the output when the interrupt is pressed without edge trigger. You can see that this spams the console. 
-
-![NOEDGE](img/Without-edge.PNG)  
+The image below shows the output when the interrupt is pressed without edge trigger. You can see that this spams the console.  
   
-Now we have enabled the edge and you can see we just receive one interrupt. 
-
-![EDGE](img/With-edge.PNG)  
+![NOEDGE](img/without-edge.PNG)  
+  
+Now we have enabled the edge and you can see we just receive one interrupt.  
+  
+![EDGE](img/with-edge.PNG)  
   
 When we deleted the request_irq we didn't receive any interrupts.  
   
-### Power on ADC
+### ADC
 To power on the ADC we have to write 1 to bit 2 in the ADC_CTRL register. See table 260 in the image below.  
   
 ![ADC](img/ADC_CTRL.PNG)  
   
-Now we have to enable the ADC interrupt. This can be done by writing 1 to bit 7 of the SIC1_ER register. Found in table 56 of the LPC documentation. See image below.
+Now we have to enable the ADC interrupt. This can be done by writing 1 to bit 7 of the SIC1_ER register. Found in table 56 of the LPC documentation. See image below.  
   
 ![SIC1_ER](img/SIC1_ER.PNG)  
-
+  
 Chapter 12.4 describes the sequence of setting up the ADC, starting a conversion, and acquiring the result value. The following steps are required:
 - Write a value to the AD_IN field of the ADSEL register to select the desired A/D channel to convert. Make sure to include the required values of other fields in the register. This was already done in the provided kernel module by the following code.  
 `WRITE_REG((data & ~0x0030) | ((channel << 4) & 0x0030), ADC_SELECT);`  
 - Wait for an A/D interrupt signal from AD_IRQ (see, or poll the raw interrupt bit 7 in the SIC1_RSR register to determine when the conversion is complete.
-- Read the conversion result in the ADC_VALUE register, which will also clear the ADC_INT interrupt.  
 
+
+
+
+- Read the conversion result in the ADC_VALUE register, which will also clear the ADC_INT interrupt.  
+  
+If ADC_VALUE isn't read out the AD_STROBE bit will not be reset, this will cause an infinite loop in the kernel because the interrupt wil be continously generated. The image below shows the infinate loop.  
+  
+![NOREADREG](img/without-readreg.PNG)  
+
+When we read the value the infinte loop will not occur and the intterupt wil occur once.  
+  
+![READREG](img/with-readreg.PNG)    
   
   
 
