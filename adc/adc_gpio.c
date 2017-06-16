@@ -9,6 +9,32 @@
 #include <mach/irqs.h>
 #include <asm/uaccess.h>
 
+/*
+ * P2 GPIO control registers
+ */
+#define P2_MUX_SET      0x40028028
+#define P2_MUX_CLR      0x4002802C
+#define P2_MUX_STATE    0x40028030
+
+#define P2_DIR_SET      0x40028010
+#define P2_DIR_CLR      0x40028014
+#define P2_DIR_STATE    0x40028018
+
+#define P2_OUTP_SET     0x40028020
+#define P2_OUTP_CLR     0x40028024
+
+#define P2_INP_STATE    0x4002801C
+#define REG_LCDCONFIG       0x40004054  //= 0
+#define VAL_LCDCONFIG       0
+#define VAL_MUX             8
+
+
+#define SET_OFFSET 0
+#define CLR_OFFSET 4
+#define STATE_OFFSET 8
+////////////////////////////////////////////////////////////////////////////
+
+
 #define BUFFER_SIZE 		1024
 
 #define DEVICE_NAME 		"adc"
@@ -53,23 +79,28 @@ static void adc_init (void)
 {
 	unsigned long data;
 
+	// set 32 KHz RTC clock
 	data = READ_REG (ADCLK_CTRL);
 	data |= 0x1;
 	WRITE_REG (data, ADCLK_CTRL);
 
+	// rtc clock ADC & Display = from PERIPH_CLK
 	data = READ_REG (ADCLK_CTRL1);
 	data &= ~0x01ff;
 	WRITE_REG (data, ADCLK_CTRL1);
 
+	// negatief & positieve referentie
 	data = READ_REG(ADC_SELECT);
 	data &= ~0x03c0;
 	data |=  0x0280;
 	WRITE_REG (data, ADC_SELECT);
 	
+	// ADC Block Power On
 	data = READ_REG(ADC_CTRL);
 	data |= AD_PDN_CTRL;
 	WRITE_REG (data, ADC_CTRL);
 
+	// Enable ADC interrupt
 	data = READ_REG(SIC1_ER);
 	data |= ADC_INT;
 	WRITE_REG (data, SIC1_ER);
@@ -79,10 +110,12 @@ static void adc_init (void)
 		printk(KERN_ALERT "ADC IRQ request failed\n");
 	}
 	
+	// Set GPI_1 Interrupt on Trigger
 	data = READ_REG(SIC2_ATR);
 	data |= GPI_1;
 	WRITE_REG (data, SIC2_ATR);
 
+	// Enable GPI interrupt
 	if (request_irq (IRQ_LPC32XX_GPI_01, gp_interrupt, IRQF_DISABLED, "gpi_interrupt", NULL) != 0)
 	{
 		printk (KERN_ALERT "GP IRQ request failed\n");
@@ -92,30 +125,60 @@ static void adc_init (void)
 static void adc_start (unsigned char channel)
 {	
 	unsigned long data;
+	unsigned int myBit = 0;
 	
+
 	if (channel >= ADC_NUMCHANNELS)
 	{
 		channel = 0;
 	}
 
 	data = READ_REG (ADC_SELECT);
-
+	//selecteer het kanaal, eerst uitlezen, kanaalbits negeren en dan alleen de kanaalbits veranderen (0x0030)
 	WRITE_REG((data & ~0x0030) | ((channel << 4) & 0x0030), ADC_SELECT);
 
+	//nu ook globaal zetten zodat we de interrupt kunnen herkennen
 	adc_channel = channel;
 
+	// start conversion
 	data = READ_REG(ADC_CTRL);
 	data |= AD_PDN_STROBE;
 	WRITE_REG (data, ADC_CTRL);
+	switch(channel) {
+		case 0:
+			myBit = 0;
+			break;
+		case 1:
+			myBit = 2;
+			break;
+		case 2:
+			myBit = 3;
+			break;
+	}
+    *(unsigned int*)(io_p2v(P2_OUTP_SET)) = 1 << myBit;
 }
 
 static irqreturn_t adc_interrupt (int irq, void * dev_id)
 {
+	unsigned int myBit = 0;
+	switch(adc_channel) {
+		case 0:
+			myBit = 0;
+			break;
+		case 1:
+			myBit = 2;
+			break;
+		case 2:
+			myBit = 3;
+			break;
+	}
+	*(unsigned int*)(io_p2v(P2_OUTP_CLR)) = 1 << myBit;
+
 	adc_values[adc_channel] = READ_REG(ADC_VALUE) & ADC_VALUE_MASK;
 
 	if (gpi_interrupt_print) 
 	{
-		printk(KERN_INFO "ADC(%d)=%d\n", adc_channel, adc_values[adc_channel]);
+		//printk(KERN_INFO "ADC(%d)=%d\n", adc_channel, adc_values[adc_channel]);
 		adc_channel++;
 		if (adc_channel < ADC_NUMCHANNELS)
 		{
@@ -192,6 +255,7 @@ static int device_open (struct inode * inode, struct file * file)
 
 static int device_release (struct inode * inode, struct file * file)
 {
+	//printk (KERN_WARNING DEVICE_NAME ": device_release()\n");
 	module_put(THIS_MODULE);
 	return 0;
 }
@@ -212,9 +276,18 @@ static struct chardev
 	struct cdev cdev;
 } adcdev;
 
+void gpio_init_ports(void) {
+    *(unsigned int*)(io_p2v(P2_MUX_SET)) = VAL_MUX;
+    *(unsigned int*)(io_p2v(REG_LCDCONFIG)) = VAL_LCDCONFIG;
+
+    // set as outp
+    *(unsigned int*)(io_p2v(P2_DIR_SET)) = 15;
+}
+
 int adcdev_init (void)
 {
 	int error = alloc_chrdev_region(&adcdev.dev, 0, ADC_NUMCHANNELS, DEVICE_NAME);;
+	gpio_init_ports();
 	if(error < 0)
 	{
 		printk(KERN_WARNING DEVICE_NAME ": dynamic allocation of major number failed, error=%d\n", error);
