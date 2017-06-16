@@ -49,8 +49,21 @@ When we read the value the infinte loop will not occur and the interrupt wil occ
   
 The ADC value is just 10 bits so we have to get this with bit operations.
   
-Now we have a kerneldevice which prints the values of all three ADCs when te interrupt button is pressed. The next step is seperating them to /dev/adc0 - /dev/adc2 so we can cat the value's.  
-  
+Now we have a kerneldevice which prints the values of all three ADCs when the interrupt button is pressed. The next step is seperating them to /dev/adc0 - /dev/adc2 character devices with matching minor numbers, so we can `cat` the values.  
+
+### ADC values
+We noticed the values changed depending on how we held the board. This lead us to finding that the accelerometer was connected to the ADC depending on the pin configurations. 
+
+![ADC](img/Accelerometer.png)
+
+We can see that ADC channel 0 is the X-axis, channel 1 is the Y-axis and channel 2 is the Z-axis when all relevant pins are shorted. We could indeed see the value change depending on the orientation of the board.
+
+ADC Channel 2 is also connected to the potmeter, which reads out when ADC Channel 2 for the accelerometer isn't shorted and the potmeter ADC Channel 2 pin on the board is shorted.
+
+![Accelerometer pins](img/AccelPins.jpg)
+
+The image above shows the pins in X, Y for ADC Channels 0 and 1, and potmeter value for ADC Channel 2.
+
 ### Sleeping kernel
 Because the ADC value isn't directly available we have to wait for the ADC to process the value. This takes some time. You could wait for this with busy waiting, but in a kernel driver this is very, VERY wrong. Instead of this we will put the device_read to sleep and wake it up when the ADC interrupt is triggered. Now we can return the value to user space.  
   
@@ -61,7 +74,7 @@ A requirement for `device_read` was to write the requested ADC channel to usersp
 
 When pressing the EINT0 button we don't need to copy anything to userspace, where we can just use `printk` inside the ADC interrupt handler. We use another flag to indicate whether the ADC read is started from `device_read` or `gp_interrupt`. For `gp_interrupt` we chose to read all ADC channels and to `printk` to show the ADC values. 
 
-# Proof of Concept and testing
+# Proof of Concept and testing delays
 -------------------------------------------------------------------------------
 
 For testing, we used the GPIO pins to view the timing differences with a logic analyzer. We opted for a logic analyzer so we could show four channels at once.
