@@ -21,6 +21,7 @@ Now we have enabled the edge and you can see we just receive one interrupt.
 When we deleted the request_irq we didn't receive any interrupts.  
 
 When we are running the kernel module we can see the interrupts in the /proc/interrupts file. We see the adc\_interrupt and the gpi\_interrupt. See image below.  
+
 ![EDGE](img/proc_interrupts.PNG)  
   
 ### ADC
