@@ -59,18 +59,39 @@ oh baby don't hurt me
 
 # Proof of Concept
 -------------------------------------------------------------------------------
-don't hurt me
 
-Om de snelheid van de ADC conversie te meten maken we gebruik van de Intronix Logicport Analyzer. We zorgen dat op bepaalde punten die we willen meten een GPIO pin hoog maken, dit kunnen we dan meten met de Logic Analyzer.  
-  
-![READREG](img/time_print.PNG)  
+We used the following hardware setup to measure the ADC conversion times. For each of the different ADC conversions we assigned a GPIO pin to check with a logic analyzer.
 
-![READREG](img/time_no_print.PNG)  
-  
-Uit de bovenstaande afbeeldingen kunnen we opmaken dat de de snelheid van de ADC conversie ongeveer 440µs duurt. Hier zit wel nog de tijd in die nodig is om de GPIO pin te schrijven.
+![Measuring setup](img/ADCMeasuringSetupHW.jpg)
 
-INSERT PRINTK STUFF
+The chosen pins are P2.0, P2.2 and P2.3, which correspond to J3.47, J3.48 and J3.57. We didn't use P2.1 since that pin kept flashing.
+
+To measure the speed of the ADC conversion, we used the Intronix LogicPort Analyzer. We set a GPIO pin high when an ADC conversion is started, and low again in the ADC interrupt. The results are seen below, for three ADC conversions performed after each other by pressing the EINT0 button.
   
+![ADC with printk](img/time_print.PNG)  
+
+![ADC without printk](img/time_no_print.PNG)  
+  
+From the recorded data we can see that the duration of the ADC conversion is about 440µs. This time does include the time it takes to determine which GPIO pins will be written to.
+
+On the first image, we noticed a very long delay between the subsequent ADC conversions. We suspected this was caused by `printk`. After removing usage of `printk` we did another measurement, the results of that are in the second image. This confirms `printk` caused the long delays.
+
+## Interrupt measurement
+
+We also measured the delay between physically pressing the button and the `gp_interrupt` being triggered. For the physical pin to hook up the logic analyzer, we looked up EINT0 (J3.7):
+
+![EINT0 pin](img/header.PNG)
+
+This image shows the physical pin being connected to the logic analyzer.
+![Interrupt delay measurement](img/InterruptMeasuringSetupHW.jpg)
+
+Result:
+![Interrupt delay result](img/time_button.PNG)
+
+We set a trigger on the physical pin connected to EINT0. Since `adc_start(0)` is called immediately in the `gp_interrupt` handler, we can see
+
+
 # Sources
 -------------------------------------------------------------------------------
 [LPC3250_OEM_Board_Users_Guide_Rev_B](../LPC3250/LPC3250_OEM_Board_Users_Guide_Rev_B.pdf)  
+[QVGA_Base_Board_v1.2](../LPC3250/QVGA_Base_Board_v1.2.pdf)  
