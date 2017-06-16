@@ -50,7 +50,7 @@ Now we have a kerneldevice which prints the values of all three ADCs when te int
 ### Sleeping kernel
 Because the ADC value isn't directly available we have to wait for the ADC to process the value. This takes some time. You could wait for this with busy waiting, but in a kernel driver this is very, VERY wrong. Instead of this we will put the device_read to sleep and wake it up when the ADC interrupt is triggered. Now we can return the value to user space.  
   
-To achieve this we use the 
+To achieve this we use the INSERT SLEEP STUFF
 
 
 # Implementation details
@@ -60,6 +60,16 @@ oh baby don't hurt me
 # Proof of Concept
 -------------------------------------------------------------------------------
 don't hurt me
+
+Om de snelheid van de ADC conversie te meten maken we gebruik van de Intronix Logicport Analyzer. We zorgen dat op bepaalde punten die we willen meten een GPIO pin hoog maken, dit kunnen we dan meten met de Logic Analyzer.  
+  
+![READREG](img/time_print.PNG)  
+
+![READREG](img/time_no_print.PNG)  
+  
+Uit de bovenstaande afbeeldingen kunnen we opmaken dat de de snelheid van de ADC conversie ongeveer 440µs duurt. Hier zit wel nog de tijd in die nodig is om de GPIO pin te schrijven.
+
+INSERT PRINTK STUFF
   
 # Sources
 -------------------------------------------------------------------------------
