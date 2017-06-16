@@ -44,10 +44,10 @@ DECLARE_WAIT_QUEUE_HEAD(adc_handled_event);
 static unsigned char	adc_channel = 0;
 static int				adc_values[ADC_NUMCHANNELS] = {0, 0, 0};
 static bool 			adc_interrupt_handled = false;
+static bool 			gpio_interrupt_print = false;
 
 static irqreturn_t      adc_interrupt (int irq, void * dev_id);
 static irqreturn_t      gp_interrupt (int irq, void * dev_id);
-
 
 static void adc_init (void)
 {
@@ -122,32 +122,34 @@ static void adc_start (unsigned char channel)
 static irqreturn_t adc_interrupt (int irq, void * dev_id)
 {
 	adc_values[adc_channel] = READ_REG(ADC_VALUE) & ADC_VALUE_MASK;
-	//printk(KERN_WARNING "ADC(%d)=%d\n", adc_channel, adc_values[adc_channel]);
 
-	adc_interrupt_handled = true;
-	wake_up_interruptible(&adc_handled_event);
-
-	// start the next channel:
-	//adc_channel++;
-	//if (adc_channel < ADC_NUMCHANNELS)
-	//{
-	//	adc_start (adc_channel);
-	//}
+	if (gpio_interrupt_print) 
+	{
+		printk(KERN_INFO "ADC(%d)=%d\n", adc_channel, adc_values[adc_channel]);
+		adc_channel++;
+		if (adc_channel < ADC_NUMCHANNELS)
+		{
+			adc_start (adc_channel);
+		}
+		else
+		{
+			gpio_interrupt_print = false;
+		}
+	}
+	else 
+	{
+		adc_interrupt_handled = true;
+		wake_up_interruptible(&adc_handled_event);
+	}
 	return (IRQ_HANDLED);
 }
 
 static irqreturn_t gp_interrupt(int irq, void * dev_id)
 {
-	adc_interrupt_handled = false;
-	adc_start (2);
-	wait_event_interruptible(adc_handled_event, adc_interrupt_handled ); 
-
-	printk(KERN_WARNING "ADC(%d)=%d\n", adc_channel, adc_values[adc_channel]);
-
-
+	gpio_interrupt_print = true;
+	adc_start (0);
 	return (IRQ_HANDLED);
 }
-
 
 static void adc_exit (void)
 {
@@ -155,11 +157,10 @@ static void adc_exit (void)
 	free_irq (IRQ_LPC32XX_TS_IRQ, NULL);
 }
 
-
 static ssize_t device_read (struct file * file, char __user *buffer, size_t length, loff_t *f_pos)
 {
 	int     channel = (int) file->private_data;
-	char	return_buffer[BUFFER_SIZE];
+	char	return_buffer[128];
 	int 	bytesWritten;
 	int 	bytesToWrite;
 
@@ -184,7 +185,6 @@ static ssize_t device_read (struct file * file, char __user *buffer, size_t leng
 		printk(KERN_ERR "Failed to write to user");
 		return -EFAULT;
 	}
-	printk(KERN_INFO "You should be seeing stuff when cat happens");
 
 	*f_pos = bytesWritten;
 	return (bytesWritten);
@@ -192,7 +192,6 @@ static ssize_t device_read (struct file * file, char __user *buffer, size_t leng
 
 static int device_open (struct inode * inode, struct file * file)
 {
-	int channel = 0;
 	int minor = MINOR(inode->i_rdev);
     file->private_data = (void*)minor;
 
