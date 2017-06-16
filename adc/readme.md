@@ -50,12 +50,12 @@ Now we have a kerneldevice which prints the values of all three ADCs when te int
 ### Sleeping kernel
 Because the ADC value isn't directly available we have to wait for the ADC to process the value. This takes some time. You could wait for this with busy waiting, but in a kernel driver this is very, VERY wrong. Instead of this we will put the device_read to sleep and wake it up when the ADC interrupt is triggered. Now we can return the value to user space.  
   
-To achieve this we use the INSERT SLEEP STUFF
+To achieve this we used `wait_event_interruptible` and `wake_up_interruptible`. These functions require a `wait_queue_head_t` item and a flag to indicate when the function can continue.
 
+### `device_read` and button interrupt difference
+A requirement for `device_read` was to write the requested ADC channel to userspace. We needed to use the interruptable wait here to wait for the ADC conversions to finish and to copy the results.
 
-# Implementation details
--------------------------------------------------------------------------------
-oh baby don't hurt me
+When pressing the EINT0 button we don't need to copy anything to userspace, where we can just use `printk` inside the ADC interrupt handler. We use another flag to indicate whether the ADC read is started from `device_read` or `gp_interrupt`. For `gp_interrupt` we chose to read all ADC channels and to `printk` to show the ADC values. 
 
 # Proof of Concept
 -------------------------------------------------------------------------------
@@ -98,3 +98,4 @@ To verify our findings, we asked other groups for their results. They indicated 
 -------------------------------------------------------------------------------
 [LPC3250_OEM_Board_Users_Guide_Rev_B](../LPC3250/LPC3250_OEM_Board_Users_Guide_Rev_B.pdf)  
 [QVGA_Base_Board_v1.2](../LPC3250/QVGA_Base_Board_v1.2.pdf)  
+[MakeLinux Chapter 6 Section 2](http://www.makelinux.net/ldd3/chp-6-sect-2)
