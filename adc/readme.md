@@ -38,7 +38,7 @@ Chapter 12.4 describes the sequence of setting up the ADC, starting a conversion
 - Wait for an A/D interrupt signal from AD_IRQ (see, or poll the raw interrupt bit 7 in the SIC1_RSR register to determine when the conversion is complete.
 - Read the conversion result in the ADC_VALUE register, which will also clear the ADC_INT interrupt.  
   
-If ADC_VALUE isn't read out the AD_STROBE bit will not be reset, this will cause an infinite loop in the kernel because the interrupt wil be continously generated. The image below shows the infinate loop.  
+If ADC_VALUE isn't read out the AD_STROBE bit will not be reset, this will cause an infinite loop in the kernel because the interrupt wil be continously generated. The image below shows the infinite loop.  
   
 ![NOREADREG](img/NoReadReg.PNG)  
 
