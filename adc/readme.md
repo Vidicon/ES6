@@ -85,10 +85,13 @@ We also measured the delay between physically pressing the button and the `gp_in
 This image shows the physical pin being connected to the logic analyzer.
 ![Interrupt delay measurement](img/InterruptMeasuringSetupHW.jpg)
 
-Result:
+Measurement results:  
+
 ![Interrupt delay result](img/time_button.PNG)
 
-We set a trigger on the physical pin connected to EINT0. Since `adc_start(0)` is called immediately in the `gp_interrupt` handler, we can see
+We set a trigger on the physical pin connected to EINT0. Since the previous GPIO setting is still in `adc_start(0)`, which is called immediately in the `gp_interrupt` handler, we can use that to observe the delay between the hardware button being pressed and the interrupt being fired. As indicated in the image this takes 17.85µs.
+
+To verify our findings, we asked other groups for their results. They indicated their gp interrupt handler delay was also around 15 to 20 µs, and the ADC conversion taking between 450µs and 500µs too.
 
 
 # Sources
