@@ -57,8 +57,10 @@ A requirement for `device_read` was to write the requested ADC channel to usersp
 
 When pressing the EINT0 button we don't need to copy anything to userspace, where we can just use `printk` inside the ADC interrupt handler. We use another flag to indicate whether the ADC read is started from `device_read` or `gp_interrupt`. For `gp_interrupt` we chose to read all ADC channels and to `printk` to show the ADC values. 
 
-# Proof of Concept
+# Proof of Concept and testing
 -------------------------------------------------------------------------------
+
+For testing, we used the GPIO pins to view the timing differences with a logic analyzer. We opted for a logic analyzer so we could show four channels at once.
 
 We used the following hardware setup to measure the ADC conversion times. For each of the different ADC conversions we assigned a GPIO pin to check with a logic analyzer.
 
@@ -93,6 +95,8 @@ We set a trigger on the physical pin connected to EINT0. Since the previous GPIO
 
 To verify our findings, we asked other groups for their results. They indicated their gp interrupt handler delay was also around 15 to 20 µs, and the ADC conversion taking between 450µs and 500µs too.
 
+## After testing
+We reverted the test changes, so the ADC code is clean and doesn't bother with GPIO functionality. The `printk` in the `gp_interrupt` was restored, so pressing the EINT0 button would show ADC conversion values again in the terminal.
 
 # Sources
 -------------------------------------------------------------------------------
