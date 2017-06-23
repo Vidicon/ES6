@@ -9,8 +9,6 @@
 #include <mach/irqs.h>
 #include <asm/uaccess.h>
 
-#define BUFFER_SIZE 		1024
-
 #define DEVICE_NAME 		"adc"
 #define ADC_NUMCHANNELS		3
 
